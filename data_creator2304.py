@@ -2,7 +2,7 @@ import mysql.connector
 import random
 from datetime import datetime, timedelta
 from faker import Faker
-#nikoss
+#nikos
 def clear_all(conn,cursor):
     # === Clear all tables (in dependency-safe order) ===
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
