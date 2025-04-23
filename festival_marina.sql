@@ -298,10 +298,4 @@ ADD CONSTRAINT chk_seller CHECK (
     ) AND (buyer_ID IS NULL AND seller_ID IS NOT NULL)
 );
 
---- Resale Constraint 3 ---
-ALTER TABLE resale_queue
-ADD CONSTRAINT chk_one_side_only CHECK (
-    (buyer_ID IS NOT NULL AND seller_ID IS NULL)
-    OR
-    (buyer_ID IS NULL AND seller_ID IS NOT NULL)
-);
+
