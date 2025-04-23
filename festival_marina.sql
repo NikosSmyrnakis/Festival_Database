@@ -1,3 +1,5 @@
+--- === TABLES CREATION === ---
+
 -- Festival
 -- Stores basic information about each festival
 CREATE TABLE festival (
@@ -177,10 +179,23 @@ CREATE TABLE review (
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
     -- NOTE: use trigger to ensure review only if activated_status = TRUE
 );
----TRIGGERS---
----Visitor Triggers--- 
----Visitor Trigger 1--- 
 
+-- Temporary Table for Resale Matches
+CREATE TABLE temp_resale_matches (
+    match_ID INT AUTO_INCREMENT PRIMARY KEY,
+    buyer_ID INT,
+    seller_ID INT,
+    ticket_ID INT,
+    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
+    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
+    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+);
+
+
+--- === TRIGGERS === ---
+--- Visitor Triggers --- 
+
+--- Visitor Trigger 1 --- 
 DELIMITER $$
 CREATE TRIGGER create_buyer_after_visitor
 AFTER INSERT ON visitor
@@ -189,10 +204,9 @@ BEGIN
     INSERT INTO buyer (visitor_ID, pending_orders_buyer)
     VALUES (NEW.visitor_ID, 0);
 END$$
-
 DELIMITER ;
 
----Visitor Trigger 2---
+--- Visitor Trigger 2 ---
 DELIMITER $$
 CREATE TRIGGER create_seller_after_visitor
 AFTER INSERT ON visitor
@@ -201,5 +215,78 @@ BEGIN
     INSERT INTO seller (visitor_ID)
     VALUES (NEW.visitor_ID);
 END$$
-
 DELIMITER ;
+
+DELIMITER $$
+
+--- Resale Triggers ---
+CREATE TRIGGER match_resale_after_insert
+AFTER INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE matched_seller INT;
+    DECLARE matched_buyer INT;
+    IF NEW.buyer_ID IS NOT NULL THEN
+        -- Match με διαθέσιμο seller για ίδιο ticket_ID
+        SELECT seller_ID INTO matched_seller
+        FROM resale_queue
+        WHERE ticket_ID = NEW.ticket_ID
+          AND seller_ID IS NOT NULL
+          AND buyer_ID IS NULL
+        LIMIT 1;
+
+        IF matched_seller IS NOT NULL THEN
+            -- Εισαγωγή στο temp_resale_matches
+            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
+            VALUES (NEW.buyer_ID, matched_seller, NEW.ticket_ID);
+
+            -- Διαγραφή των matched εγγραφών από resale_queue
+            DELETE FROM resale_queue WHERE
+                (buyer_ID = NEW.buyer_ID AND ticket_ID = NEW.ticket_ID)
+                OR (seller_ID = matched_seller AND ticket_ID = NEW.ticket_ID);
+        END IF;
+    END IF;
+    IF NEW.seller_ID IS NOT NULL THEN
+        -- Match με διαθέσιμο buyer για ίδιο ticket_ID
+        SELECT buyer_ID INTO matched_buyer
+        FROM resale_queue
+        WHERE ticket_ID = NEW.ticket_ID
+          AND buyer_ID IS NOT NULL
+          AND seller_ID IS NULL
+        LIMIT 1;
+
+        IF matched_buyer IS NOT NULL THEN
+            -- Εισαγωγή στο temp_resale_matches
+            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
+            VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
+
+            -- Διαγραφή των matched εγγραφών από resale_queue
+            DELETE FROM resale_queue WHERE
+                (seller_ID = NEW.seller_ID AND ticket_ID = NEW.ticket_ID)
+                OR (buyer_ID = matched_buyer AND ticket_ID = NEW.ticket_ID);
+        END IF;
+    END IF;
+END$$
+DELIMITER ;
+
+
+--- === CONSTRAINTS === ---
+--- Resale Constraints ---
+--- Resale Constraint 1 ---
+ALTER TABLE resale_queue
+ADD CONSTRAINT chk_event_or_ticket CHECK (
+    (
+        (ticket_ID IS NULL) AND (event_name IS NOT NULL) AND (ticket_type IS NOT NULL)
+    )
+    OR
+    (
+        (ticket_ID IS NOT NULL) AND (event_name IS NULL) AND (ticket_type IS NULL)
+    )
+);
+--- Resale Constraint 2 ---
+ALTER TABLE resale_queue
+ADD CONSTRAINT chk_one_side_only CHECK (
+    (buyer_ID IS NOT NULL AND seller_ID IS NULL)
+    OR
+    (buyer_ID IS NULL AND seller_ID IS NOT NULL)
+);
