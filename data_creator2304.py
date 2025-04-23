@@ -235,13 +235,14 @@ for pid in performance_ids:
 
 
 # === 11. Buyer ===
-buyer_ids = []
-for _ in range(10):
-    cursor.execute("""
-        INSERT INTO buyer (name, email)
-        VALUES (%s, %s)
-    """, (fake.name(), fake.email()))
-    buyer_ids.append(cursor.lastrowid)
+if(False):
+    buyer_ids = []
+    for _ in range(10):
+        cursor.execute("""
+            INSERT INTO buyer (name, email)
+            VALUES (%s, %s)
+        """, (fake.name(), fake.email()))
+        buyer_ids.append(cursor.lastrowid)
 
 # === 12. Tickets ===
 ticket_ids = []
