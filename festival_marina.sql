@@ -135,7 +135,11 @@ CREATE TABLE ticket (
 -- A queue for tickets listed for resale, based on timestamp
 CREATE TABLE resale_queue (
     resale_ID INT AUTO_INCREMENT PRIMARY KEY,
-    ticket_ID INT,
+    buyer_ID INT,
+    seller_ID INT,
+    event_name VARCHAR(255) NULL,
+    ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
+    ticket_ID INT NULL,
     listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
@@ -148,22 +152,6 @@ CREATE TABLE buyer (
     email VARCHAR(100) UNIQUE
 );
 
--- Visitor-Buyer Interest
--- Tracks a visitor's expression of interest toward a buyer and their desired ticket/event
-CREATE TABLE visitor_buyer_interest (
-    visitor_ID INT,
-    buyer_ID INT,
-    ticket_ID INT,                 -- optional: specific ticket of interest
-    event_ID INT,                  -- optional: event of interest
-    ticket_type ENUM('general_admission', 'VIP', 'backstage'), -- optional
-    expressed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (visitor_ID, buyer_ID),
-    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID),
-    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID),
-    FOREIGN KEY (event_ID) REFERENCES events(event_ID)
-);
 
 -- Seller
 -- Represents users who are selling or listing tickets for resale
@@ -173,19 +161,6 @@ CREATE TABLE seller (
     email VARCHAR(100) UNIQUE
 );
 
--- Visitor-Seller Interest
--- Tracks a visitor's interest in purchasing a ticket from a seller
-CREATE TABLE visitor_seller_interest (
-    visitor_ID INT,
-    seller_ID INT,
-    ticket_ID INT NOT NULL,         -- ticket the seller wants to sell
-    expressed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (visitor_ID, seller_ID),
-    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID),
-    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
-);
 
 -- Review
 -- Feedback for events by visitors who have activated tickets
