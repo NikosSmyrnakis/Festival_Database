@@ -12,6 +12,13 @@ def clear_all(conn,cursor):
         "performances",
         "events",
         "artist",
+        "artist_performances",
+        "buyer",
+        "resale_queue",
+        "review",
+        "ticket",
+        "seller",
+        "visitor",
         "personel",
         "building",
         "festival_location",
@@ -249,20 +256,24 @@ ticket_ids = []
 ticket_types = ['general_admission', 'VIP', 'backstage']
 payment_methods = ['debit_card', 'credit_card', 'I-BAN']
 
-for _ in range(15):
+for _ in range(35):
+    visitor_id = random.choice(visitor_ids)
+    event_id = random.choice(event_ids)
+    ticket_type = random.choice(ticket_types)
+    activated_ticket = random.choice([True, False])
     cursor.execute("""
-        INSERT INTO ticket (event_ID, visitor_ID, ticket_type, purchase_date, purchase_price, payment_method, activated_status)
+        INSERT IGNORE INTO ticket (event_ID, visitor_ID, ticket_type, purchase_date, purchase_price, payment_method, activated_status)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """, (
-        random.choice(event_ids),
-        random.choice(visitor_ids),
-        random.choice(ticket_types),
+        event_id,
+        visitor_id,
+        ticket_type,
         fake.date_between(start_date='-30d', end_date='today'),
         round(random.uniform(20.0, 100.0), 2),
         random.choice(payment_methods),
-        random.choice([True, False])
+        activated_ticket
     ))
-    ticket_ids.append(cursor.lastrowid)
+    ticket_ids.append([cursor.lastrowid,event_id,visitor_id,ticket_type,activated_ticket])
 
 
 
@@ -279,11 +290,33 @@ if False:
 
 
 # === 16. Resale queue ===
-for tid in random.sample(ticket_ids, k=5):  # Επιλέγουμε κάποια εισιτήρια προς μεταπώληση
-    cursor.execute("""
-        INSERT INTO resale_queue (ticket_ID)
-        VALUES (%s)
-    """, (tid,))
+for ticket in random.sample(ticket_ids, k=30): 
+    ticket_id, event_id, visitor_id, ticket_type, activated = ticket
+    if not activated:
+        # Get event name from event_id
+        cursor.execute("SELECT event_name FROM events WHERE event_ID = %s", (event_id,))
+        event_name = cursor.fetchone()[0]
+
+        # Insert into resale queue using the visitor as the seller
+        # Increment pending_orders_seller ot buyer for that visitor
+        if random.random() < 0.7:
+            cursor.execute("""
+                INSERT INTO resale_queue (ticket_ID, seller_ID, event_name, ticket_type)
+                VALUES (%s, %s, %s, %s)
+             """, (ticket_id, visitor_id, event_name, ticket_type))
+            cursor.execute("""
+                UPDATE seller SET pending_orders_seller = pending_orders_seller + 1
+                WHERE visitor_ID = %s
+            """, (visitor_id,))
+        else:
+            cursor.execute("""
+                INSERT INTO resale_queue (ticket_ID, buyer_ID, event_name, ticket_type)
+                VALUES (%s, %s, %s, %s)
+             """, (ticket_id, visitor_id, event_name, ticket_type))
+            cursor.execute("""
+                UPDATE buyer SET pending_orders_buyer = pending_orders_buyer + 1
+                WHERE visitor_ID = %s
+            """, (visitor_id,))
 
 # === 17. Reviews ===
 for tid in ticket_ids:
@@ -293,7 +326,7 @@ for tid in ticket_ids:
             stage_presence, event_organization, overall_impression
         ) VALUES (%s, %s, %s, %s, %s, %s)
     """, (
-        tid,
+        tid[0],
         str(random.randint(1, 5)),
         str(random.randint(1, 5)),
         str(random.randint(1, 5)),
