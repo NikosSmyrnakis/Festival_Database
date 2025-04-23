@@ -221,7 +221,7 @@ DELIMITER $$
 
 --- Resale Triggers ---
 CREATE TRIGGER match_resale_after_insert
-AFTER INSERT ON resale_queue
+BEFORE INSERT ON resale_queue
 FOR EACH ROW
 BEGIN
     DECLARE matched_seller INT;
@@ -242,9 +242,7 @@ BEGIN
             VALUES (NEW.buyer_ID, matched_seller, NEW.ticket_ID);
 
             -- Διαγραφή των matched εγγραφών από resale_queue
-            DELETE FROM resale_queue WHERE
-                (buyer_ID = NEW.buyer_ID AND ticket_ID = NEW.ticket_ID)
-                OR (seller_ID = matched_seller AND ticket_ID = NEW.ticket_ID);
+            SET NEW.resale_ID = NULL;
         END IF;
     END IF;
     -- If new row is a seller
@@ -263,9 +261,7 @@ BEGIN
             VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
 
             -- Διαγραφή των matched εγγραφών από resale_queue
-            DELETE FROM resale_queue WHERE
-                (seller_ID = NEW.seller_ID AND ticket_ID = NEW.ticket_ID)
-                OR (buyer_ID = matched_buyer AND ticket_ID = NEW.ticket_ID);
+            SET NEW.buyer_ID = NULL;
         END IF;
     END IF;
 END$$

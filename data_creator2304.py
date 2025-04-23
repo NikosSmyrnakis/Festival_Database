@@ -347,6 +347,8 @@ for ticket in random.sample(ticket_ids, k=30):
                     INSERT INTO resale_queue (ticket_ID, buyer_ID, listed_at)
                     VALUES (%s, %s, %s)
                 """, (temp_id, visitor_id, date_before))
+                sellers_t_ids.remove(temp_id)
+                k-= 1
             cursor.execute("""
                 UPDATE buyer SET pending_orders_buyer = pending_orders_buyer + 1
                 WHERE visitor_ID = %s
