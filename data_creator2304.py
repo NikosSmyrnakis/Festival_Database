@@ -307,11 +307,14 @@ for ticket in random.sample(ticket_ids, k=30):
         # Get event name from event_id
         cursor.execute("SELECT purchase_date FROM ticket WHERE ticket_ID = %s", (ticket_id,))
         purchase_date = cursor.fetchone()[0]
+        base_date = datetime.combine(purchase_date, datetime.min.time())
+        # Generate time and subtract days
         days_before = random.randint(2, 10)
         hour = random.randint(12, 22)
         minute = random.choice([0, 15, 30, 45])
-        date_before = (purchase_date - timedelta(days=days_before)).replace(hour=hour, minute=minute, second=0, microsecond=0)
-
+        # Final datetime
+        date_before = (base_date - timedelta(days=days_before)).replace(hour=hour, minute=minute, second=0, microsecond=0)
+        
         cursor.execute("SELECT event_name FROM events WHERE event_ID = %s", (event_id,))
         event_name = cursor.fetchone()[0]
 
