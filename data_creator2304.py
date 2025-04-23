@@ -22,7 +22,8 @@ def clear_all(conn,cursor):
         "personel",
         "building",
         "festival_location",
-        "festival"
+        "festival",
+        "temp_resale_matches"
     ]
 
     for table in tables:
