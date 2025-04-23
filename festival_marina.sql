@@ -260,7 +260,7 @@ BEGIN
             INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
             VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
             -- Διαγραφή των matched εγγραφών από resale_queue
-            SET NEW.buyer_ID = NULL;
+            SET NEW.resale_ID = NULL;
         END IF;
     END IF;
 END$$
