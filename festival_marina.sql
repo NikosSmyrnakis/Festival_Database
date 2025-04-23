@@ -163,17 +163,6 @@ CREATE TABLE seller (
     FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
 );
 
-DELIMITER $$
-CREATE TRIGGER create_seller_after_visitor
-AFTER INSERT ON visitor
-FOR EACH ROW
-BEGIN
-    INSERT INTO seller (visitor_ID)
-    VALUES (NEW.visitor_ID);
-END$$
-
-DELIMITER ;
-
 -- Review
 -- Feedback for events by visitors who have activated tickets
 -- (Use a trigger to ensure review is only allowed if ticket is activated)
@@ -189,7 +178,8 @@ CREATE TABLE review (
     -- NOTE: use trigger to ensure review only if activated_status = TRUE
 );
 ---TRIGGERS---
----Visitor Triggers---  
+---Visitor Triggers--- 
+---Visitor Trigger 1--- 
 
 DELIMITER $$
 CREATE TRIGGER create_buyer_after_visitor
@@ -198,6 +188,18 @@ FOR EACH ROW
 BEGIN
     INSERT INTO buyer (visitor_ID, pending_orders_buyer)
     VALUES (NEW.visitor_ID, 0);
+END$$
+
+DELIMITER ;
+
+---Visitor Trigger 2---
+DELIMITER $$
+CREATE TRIGGER create_seller_after_visitor
+AFTER INSERT ON visitor
+FOR EACH ROW
+BEGIN
+    INSERT INTO seller (visitor_ID)
+    VALUES (NEW.visitor_ID);
 END$$
 
 DELIMITER ;
