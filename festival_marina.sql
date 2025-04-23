@@ -266,19 +266,6 @@ BEGIN
 END$$
 DELIMITER ;
 
---- Resale Trigger 2 ---
-DELIMITER $$
-
-CREATE TRIGGER clean_resale_queue_after_match
-AFTER INSERT ON temp_resale_matches
-FOR EACH ROW
-BEGIN
-    DELETE FROM resale_queue
-    WHERE (buyer_ID = NEW.buyer_ID AND ticket_ID = NEW.ticket_ID)
-       OR (seller_ID = NEW.seller_ID AND ticket_ID = NEW.ticket_ID);
-END$$
-
-DELIMITER ;
 
 
 --- === CONSTRAINTS === ---
