@@ -299,3 +299,4 @@ ADD CONSTRAINT chk_one_side_only CHECK (
     (buyer_ID IS NULL AND seller_ID IS NOT NULL)
 );
 --hope
+
