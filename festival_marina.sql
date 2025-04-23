@@ -220,6 +220,7 @@ DELIMITER ;
 DELIMITER $$
 
 --- Resale Triggers ---
+--- Resale Trigger 1 ---
 CREATE TRIGGER match_resale_after_insert
 BEFORE INSERT ON resale_queue
 FOR EACH ROW
@@ -240,7 +241,6 @@ BEGIN
             -- Εισαγωγή στο temp_resale_matches
             INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
             VALUES (NEW.buyer_ID, matched_seller, NEW.ticket_ID);
-
             -- Διαγραφή των matched εγγραφών από resale_queue
             SET NEW.resale_ID = NULL;
         END IF;
@@ -259,12 +259,25 @@ BEGIN
             -- Εισαγωγή στο temp_resale_matches
             INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
             VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
-
             -- Διαγραφή των matched εγγραφών από resale_queue
             SET NEW.buyer_ID = NULL;
         END IF;
     END IF;
 END$$
+DELIMITER ;
+
+--- Resale Trigger 2 ---
+DELIMITER $$
+
+CREATE TRIGGER clean_resale_queue_after_match
+AFTER INSERT ON temp_resale_matches
+FOR EACH ROW
+BEGIN
+    DELETE FROM resale_queue
+    WHERE (buyer_ID = NEW.buyer_ID AND ticket_ID = NEW.ticket_ID)
+       OR (seller_ID = NEW.seller_ID AND ticket_ID = NEW.ticket_ID);
+END$$
+
 DELIMITER ;
 
 
