@@ -263,54 +263,19 @@ for _ in range(15):
     ))
     ticket_ids.append(cursor.lastrowid)
 
+
+
+
 # === 13. Seller ===
-seller_ids = []
-for _ in range(10):
-    cursor.execute("""
-        INSERT INTO seller (name, email)
-        VALUES (%s, %s)
-    """, (fake.name(), fake.email()))
-    seller_ids.append(cursor.lastrowid)
-# === 14. Visitor Buyer Interest ===
-visitor_buyer_pairs = set()
-
-for _ in range(10):
-    vid = random.choice(visitor_ids)
-    bid = random.choice(buyer_ids)
-    pair = (vid, bid)
-
-    if pair not in visitor_buyer_pairs:
+if False:
+    seller_ids = []
+    for _ in range(10):
         cursor.execute("""
-            INSERT INTO visitor_buyer_interest (visitor_ID, buyer_ID, ticket_ID, event_ID, ticket_type)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (
-            vid,
-            bid,
-            random.choice(ticket_ids),
-            random.choice(event_ids),
-            random.choice(ticket_types)
-        ))
-        visitor_buyer_pairs.add(pair)
+            INSERT INTO seller (visitor_ID, email)
+            VALUES (%s, %s)
+        """, (fake.name(), fake.email()))
+        seller_ids.append(cursor.lastrowid)
 
-
-# === 15. Visitor Seller Interest ===   
-visitor_seller_pairs = set()
-
-for _ in range(10):
-    vid = random.choice(visitor_ids)
-    sid = random.choice(seller_ids)
-    pair = (vid, sid)
-
-    if pair not in visitor_seller_pairs:
-        cursor.execute("""
-            INSERT INTO visitor_seller_interest (visitor_ID, seller_ID, ticket_ID)
-            VALUES (%s, %s, %s)
-        """, (
-            vid,
-            sid,
-            random.choice(ticket_ids)
-        ))
-        visitor_seller_pairs.add(pair)
 
 # === 16. Resale queue ===
 for tid in random.sample(ticket_ids, k=5):  # Επιλέγουμε κάποια εισιτήρια προς μεταπώληση
