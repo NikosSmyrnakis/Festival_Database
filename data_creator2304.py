@@ -252,6 +252,16 @@ if(False):
         """, (fake.name(), fake.email()))
         buyer_ids.append(cursor.lastrowid)
 
+
+def random_ticket_date(event_id):
+    cursor.execute("SELECT festival_ID FROM events WHERE event_ID = %s", (event_id,))
+    festival_id = cursor.fetchone()[0]
+    cursor.execute("SELECT starting_date FROM festival WHERE festival_ID = %s", (festival_id,))
+    start_date = cursor.fetchone()[0]  # should be a datetime.date
+    days_before = random.randint(6, 10)
+    date_before = start_date - timedelta(days=days_before)
+    return date_before
+
 # === 12. Tickets ===
 ticket_ids = []
 ticket_types = ['general_admission', 'VIP', 'backstage']
@@ -269,7 +279,7 @@ for _ in range(35):
         event_id,
         visitor_id,
         ticket_type,
-        fake.date_between(start_date='-30d', end_date='today'),
+        random_ticket_date(event_id),
         round(random.uniform(20.0, 100.0), 2),
         random.choice(payment_methods),
         activated_ticket
@@ -295,25 +305,40 @@ for ticket in random.sample(ticket_ids, k=30):
     ticket_id, event_id, visitor_id, ticket_type, activated = ticket
     if not activated:
         # Get event name from event_id
+        cursor.execute("SELECT purchase_date FROM ticket WHERE ticket_ID = %s", (ticket_id,))
+        purchase_date = cursor.fetchone()[0]
+        days_before = random.randint(2, 10)
+        hour = random.randint(12, 22)
+        minute = random.choice([0, 15, 30, 45])
+        date_before = (purchase_date - timedelta(days=days_before)).replace(hour=hour, minute=minute, second=0, microsecond=0)
+
         cursor.execute("SELECT event_name FROM events WHERE event_ID = %s", (event_id,))
         event_name = cursor.fetchone()[0]
 
         # Insert into resale queue using the visitor as the seller
         # Increment pending_orders_seller ot buyer for that visitor
         if random.random() < 0.7:
+            #if seller
             cursor.execute("""
-                INSERT INTO resale_queue (ticket_ID, seller_ID, event_name, ticket_type)
-                VALUES (%s, %s, %s, %s)
-             """, (ticket_id, visitor_id, event_name, ticket_type))
+                INSERT INTO resale_queue (ticket_ID, seller_ID, event_name, ticket_type, listed_at)
+                VALUES (%s, %s, %s, %s, %s)
+             """, (ticket_id, visitor_id, event_name, ticket_type, date_before))
             cursor.execute("""
                 UPDATE seller SET pending_orders_seller = pending_orders_seller + 1
                 WHERE visitor_ID = %s
             """, (visitor_id,))
         else:
-            cursor.execute("""
-                INSERT INTO resale_queue (ticket_ID, buyer_ID, event_name, ticket_type)
-                VALUES (%s, %s, %s, %s)
-             """, (ticket_id, visitor_id, event_name, ticket_type))
+            #if buyer
+            if random.random() < 0.5:
+                cursor.execute("""
+                    INSERT INTO resale_queue (buyer_ID, event_name, ticket_type, listed_at)
+                    VALUES (%s, %s, %s, %s)
+                """, (visitor_id, event_name, ticket_type, date_before))
+            else:
+                cursor.execute("""
+                    INSERT INTO resale_queue (ticket_ID, buyer_ID, listed_at)
+                    VALUES (%s, %s, %s)
+                """, (ticket_id, visitor_id, date_before))
             cursor.execute("""
                 UPDATE buyer SET pending_orders_buyer = pending_orders_buyer + 1
                 WHERE visitor_ID = %s
