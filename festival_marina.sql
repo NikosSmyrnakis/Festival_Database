@@ -150,6 +150,7 @@ CREATE TABLE buyer (
     buyer_ID INT AUTO_INCREMENT PRIMARY KEY,
     visitor_ID INT FOREIGN KEY REFERENCES visitor(visitor_ID),
     pending_orders_buyer INT DEFAULT 0,         -- number of pending orders
+    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
 );
 
 
@@ -159,8 +160,17 @@ CREATE TABLE seller (
     seller_ID INT AUTO_INCREMENT PRIMARY KEY,
     visitor_ID INT FOREIGN KEY REFERENCES visitor(visitor_ID),
     pending_orders_seller INT DEFAULT 0,         -- number of pending orders
+    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
 );
 
+
+CREATE TRIGGER create_seller_after_visitor
+AFTER INSERT ON visitor
+FOR EACH ROW
+BEGIN
+    INSERT INTO seller (visitor_ID)
+    VALUES (NEW.visitor_ID);
+END;
 
 -- Review
 -- Feedback for events by visitors who have activated tickets
