@@ -176,4 +176,16 @@ CREATE TABLE review (
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
     -- NOTE: use trigger to ensure review only if activated_status = TRUE
 );
----please work
+---TRIGGERS---
+---Visitor Triggers---  
+
+DELIMITER $$
+CREATE TRIGGER create_buyer_after_visitor
+AFTER INSERT ON visitor
+FOR EACH ROW
+BEGIN
+    INSERT INTO buyer (visitor_ID, pending_orders_buyer)
+    VALUES (NEW.visitor_ID, 0);
+END$$
+
+DELIMITER ;
