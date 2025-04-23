@@ -201,3 +201,4 @@ CREATE TABLE review (
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
     -- NOTE: use trigger to ensure review only if activated_status = TRUE
 );
+---please work
