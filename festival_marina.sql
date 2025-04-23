@@ -142,7 +142,7 @@ CREATE TABLE resale_queue (
     event_name VARCHAR(255) NULL,
     ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
     ticket_ID INT NULL,
-    listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    listed_at TIMESTAMP,
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
 
@@ -226,6 +226,7 @@ FOR EACH ROW
 BEGIN
     DECLARE matched_seller INT;
     DECLARE matched_buyer INT;
+    -- If new row is a buyer
     IF NEW.buyer_ID IS NOT NULL THEN
         -- Match με διαθέσιμο seller για ίδιο ticket_ID
         SELECT seller_ID INTO matched_seller
@@ -246,6 +247,7 @@ BEGIN
                 OR (seller_ID = matched_seller AND ticket_ID = NEW.ticket_ID);
         END IF;
     END IF;
+    -- If new row is a seller
     IF NEW.seller_ID IS NOT NULL THEN
         -- Match με διαθέσιμο buyer για ίδιο ticket_ID
         SELECT buyer_ID INTO matched_buyer
@@ -274,7 +276,8 @@ DELIMITER ;
 --- Resale Constraints ---
 --- Resale Constraint 1 ---
 ALTER TABLE resale_queue
-ADD CONSTRAINT chk_event_or_ticket CHECK (
+ADD CONSTRAINT chk_buyer CHECK (
+    (
     (
         (ticket_ID IS NULL) AND (event_name IS NOT NULL) AND (ticket_type IS NOT NULL)
     )
@@ -282,8 +285,20 @@ ADD CONSTRAINT chk_event_or_ticket CHECK (
     (
         (ticket_ID IS NOT NULL) AND (event_name IS NULL) AND (ticket_type IS NULL)
     )
+    ) AND (buyer_ID IS NOT NULL AND seller_ID IS NULL)
 );
+
 --- Resale Constraint 2 ---
+ALTER TABLE resale_queue
+ADD CONSTRAINT chk_seller CHECK (
+    (
+    (
+        (ticket_ID IS NOT NULL) AND (event_name IS NOT NULL) AND (ticket_type IS NOT NULL)
+    )
+    ) AND (buyer_ID IS NULL AND seller_ID IS NOT NULL)
+);
+
+--- Resale Constraint 3 ---
 ALTER TABLE resale_queue
 ADD CONSTRAINT chk_one_side_only CHECK (
     (buyer_ID IS NOT NULL AND seller_ID IS NULL)
