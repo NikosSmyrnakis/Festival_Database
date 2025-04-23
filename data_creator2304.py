@@ -301,6 +301,8 @@ if False:
 
 
 # === 16. Resale queue ===
+sellers_t_ids = []
+k = 0
 for ticket in random.sample(ticket_ids, k=30): 
     ticket_id, event_id, visitor_id, ticket_type, activated = ticket
     if not activated:
@@ -322,6 +324,7 @@ for ticket in random.sample(ticket_ids, k=30):
         # Increment pending_orders_seller ot buyer for that visitor
         if random.random() < 0.7:
             #if seller
+            k+=1
             cursor.execute("""
                 INSERT INTO resale_queue (ticket_ID, seller_ID, event_name, ticket_type, listed_at)
                 VALUES (%s, %s, %s, %s, %s)
@@ -330,22 +333,25 @@ for ticket in random.sample(ticket_ids, k=30):
                 UPDATE seller SET pending_orders_seller = pending_orders_seller + 1
                 WHERE visitor_ID = %s
             """, (visitor_id,))
+            sellers_t_ids.append(ticket_id)
         else:
             #if buyer
-            if random.random() < 0.5:
+            if random.random() < 0.5 or k == 0:
                 cursor.execute("""
                     INSERT INTO resale_queue (buyer_ID, event_name, ticket_type, listed_at)
                     VALUES (%s, %s, %s, %s)
                 """, (visitor_id, event_name, ticket_type, date_before))
             else:
+                temp_id = random.choice(sellers_t_ids)
                 cursor.execute("""
                     INSERT INTO resale_queue (ticket_ID, buyer_ID, listed_at)
                     VALUES (%s, %s, %s)
-                """, (ticket_id, visitor_id, date_before))
+                """, (temp_id, visitor_id, date_before))
             cursor.execute("""
                 UPDATE buyer SET pending_orders_buyer = pending_orders_buyer + 1
                 WHERE visitor_ID = %s
             """, (visitor_id,))
+    
 
 # === 17. Reviews ===
 for tid in ticket_ids:
