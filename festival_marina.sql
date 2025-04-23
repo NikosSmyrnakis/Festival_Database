@@ -276,29 +276,22 @@ DELIMITER ;
 --- Resale Constraints ---
 --- Resale Constraint 1 ---
 ALTER TABLE resale_queue
-ADD CONSTRAINT chk_buyer CHECK (
+ADD CONSTRAINT chk_seller_or_buyer CHECK (
     (
-    (
-        (ticket_ID IS NULL) AND (event_name IS NOT NULL) AND (ticket_type IS NOT NULL)
+    ((ticket_ID IS NULL) AND (event_name IS NOT NULL) AND (ticket_type IS NOT NULL))
+    OR
+    ((ticket_ID IS NOT NULL) AND (event_name IS NULL) AND (ticket_type IS NULL))
+     AND (buyer_ID IS NOT NULL)
     )
     OR
     (
-        (ticket_ID IS NOT NULL) AND (event_name IS NULL) AND (ticket_type IS NULL)
+    ((ticket_ID IS NOT NULL) AND (event_name IS NOT NULL) AND (ticket_type IS NOT NULL))
+    AND (seller_ID IS NOT NULL)
     )
-    ) AND (buyer_ID IS NOT NULL AND seller_ID IS NULL)
 );
+
 
 --- Resale Constraint 2 ---
-ALTER TABLE resale_queue
-ADD CONSTRAINT chk_seller CHECK (
-    (
-    (
-        (ticket_ID IS NOT NULL) AND (event_name IS NOT NULL) AND (ticket_type IS NOT NULL)
-    )
-    ) AND (buyer_ID IS NULL AND seller_ID IS NOT NULL)
-);
-
---- Resale Constraint 3 ---
 ALTER TABLE resale_queue
 ADD CONSTRAINT chk_one_side_only CHECK (
     (buyer_ID IS NOT NULL AND seller_ID IS NULL)
