@@ -142,7 +142,7 @@ CREATE TABLE resale_queue (
     event_name VARCHAR(255) NULL,
     ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
     ticket_ID INT NULL,
-    listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    listed_at TIMESTAMP,
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
 
