@@ -148,18 +148,22 @@ CREATE TABLE resale_queue (
 -- Represents users interested in buying tickets
 CREATE TABLE buyer (
     buyer_ID INT AUTO_INCREMENT PRIMARY KEY,
-    visitor_ID INT FOREIGN KEY REFERENCES visitor(visitor_ID),
-    pending_orders_buyer INT DEFAULT 0,         -- number of pending orders
+    visitor_ID INT,
+    pending_orders_buyer INT DEFAULT 0,
+    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
 );
+
 
 
 -- Seller
 -- Represents users who are selling or listing tickets for resale
 CREATE TABLE seller (
     seller_ID INT AUTO_INCREMENT PRIMARY KEY,
-    visitor_ID INT FOREIGN KEY REFERENCES visitor(visitor_ID),
-    pending_orders_seller INT DEFAULT 0,         -- number of pending orders
+    visitor_ID INT,
+    pending_orders_seller INT DEFAULT 0,
+    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
 );
+
 
 
 -- Review
