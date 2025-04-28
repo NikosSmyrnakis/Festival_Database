@@ -70,7 +70,7 @@ CREATE TABLE events (
     event_building INT,
     duration INT GENERATED ALWAYS AS (TIMESTAMPDIFF(MINUTE, start_time, end_time)) STORED,
     FOREIGN KEY (event_building) REFERENCES building(building_ID),
-    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID)
+    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID),
     CHECK (start_time < end_time)
 );
 
