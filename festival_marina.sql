@@ -317,6 +317,40 @@ END$$
 
 DELIMITER ;
 
+--- Ticket Triggers ---
+--- Ticket Trigger 1 ---
+-- VIP ticket limit check
+-- Ensure that the number of VIP tickets does not exceed 10% of total tickets for the event
+-- This is done using a trigger before inserting a new ticket
+
+DELIMITER $$
+
+CREATE TRIGGER check_vip_limit
+BEFORE INSERT ON ticket
+FOR EACH ROW
+BEGIN
+    DECLARE vip_count INT;
+    DECLARE total_count INT;
+
+    IF NEW.ticket_type = 'VIP' THEN
+        SELECT COUNT(*) INTO vip_count
+        FROM ticket
+        WHERE event_ID = NEW.event_ID AND ticket_type = 'VIP';
+
+        SELECT COUNT(*) INTO total_count
+        FROM ticket
+        WHERE event_ID = NEW.event_ID;
+
+        IF (vip_count + 1) > (0.1 * (total_count + 1)) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'VIP ticket limit exceeded for this event.';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
+
 
 
 
