@@ -270,8 +270,27 @@ payment_methods = ['debit_card', 'credit_card', 'I-BAN']
 for _ in range(35):
     visitor_id = random.choice(visitor_ids)
     event_id = random.choice(event_ids)
-    ticket_type = random.choice(ticket_types)
+    
+    # Πριν διαλέξουμε τυχαίο τύπο, ελέγχουμε αν μπορούμε να βάλουμε VIP
+    cursor.execute("SELECT COUNT(*) FROM ticket WHERE event_ID = %s", (event_id,))
+    total_tickets = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM ticket WHERE event_ID = %s AND ticket_type = 'VIP'", (event_id,))
+    vip_tickets = cursor.fetchone()[0]
+
+    if total_tickets == 0:
+        # Αν δεν υπάρχουν άλλα tickets, βάζουμε γενική είσοδο
+        allowed_ticket_types = ['general_admission', 'backstage']
+    else:
+        # Αν το VIPs <= 10% * total, το επιτρέπουμε
+        if (vip_tickets + 1) <= 0.1 * (total_tickets + 1):
+            allowed_ticket_types = ['general_admission', 'VIP', 'backstage']
+        else:
+            allowed_ticket_types = ['general_admission', 'backstage']
+
+    ticket_type = random.choice(allowed_ticket_types)
     activated_ticket = random.choice([True, False])
+
     cursor.execute("""
         INSERT IGNORE INTO ticket (event_ID, visitor_ID, ticket_type, purchase_date, purchase_price, payment_method, activated_status)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -284,7 +303,7 @@ for _ in range(35):
         random.choice(payment_methods),
         activated_ticket
     ))
-    ticket_ids.append([cursor.lastrowid,event_id,visitor_id,ticket_type,activated_ticket])
+    ticket_ids.append([cursor.lastrowid, event_id, visitor_id, ticket_type, activated_ticket])
 
 
 
