@@ -375,20 +375,23 @@ for ticket in random.sample(ticket_ids, k=30):
     
 
 # === 17. Reviews ===
-for tid in ticket_ids:
-    cursor.execute("""
-        INSERT INTO review (
-            ticket_ID, artist_performance, sound_and_lighting,
-            stage_presence, event_organization, overall_impression
-        ) VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        tid[0],
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5))
-    ))
+for ticket in ticket_ids:
+    ticket_id = ticket[0]
+    activated_status = ticket[4]  # Στο ticket_ids έχεις και το activated status
+
+    if activated_status:  # Μόνο αν είναι ενεργό
+        cursor.execute("""
+            INSERT INTO review (ticket_ID, artist_performance, sound_and_lighting, stage_presence, event_organization, overall_impression)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            ticket_id,
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5))
+        ))
+
 
 
 
