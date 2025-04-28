@@ -68,8 +68,10 @@ CREATE TABLE events (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     event_building INT,
+    duration INT GENERATED ALWAYS AS (TIMESTAMPDIFF(MINUTE, start_time, end_time)) STORED,
     FOREIGN KEY (event_building) REFERENCES building(building_ID),
-    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID)
+    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID),
+    CHECK (start_time < end_time)
 );
 
 -- Performances
@@ -196,6 +198,11 @@ CREATE TABLE temp_resale_matches (
 --- Visitor Triggers --- 
 
 --- Visitor Trigger 1 --- 
+-- When a new visitor is created, create a corresponding buyer entry
+-- with the same visitor_ID and default pending_orders_buyer = 0
+-- This is to ensure that every visitor can be a buyer or seller
+-- without needing to create a new entry in the buyer table
+
 DELIMITER $$
 CREATE TRIGGER create_buyer_after_visitor
 AFTER INSERT ON visitor
@@ -207,6 +214,11 @@ END$$
 DELIMITER ;
 
 --- Visitor Trigger 2 ---
+-- When a new visitor is created, create a corresponding seller entry
+-- with the same visitor_ID and default pending_orders_seller = 0
+-- This is to ensure that every visitor can be a buyer or seller
+-- without needing to create a new entry in the seller table
+
 DELIMITER $$
 CREATE TRIGGER create_seller_after_visitor
 AFTER INSERT ON visitor
@@ -221,6 +233,9 @@ DELIMITER $$
 
 --- Resale Triggers ---
 --- Resale Trigger 1 ---
+-- When a ticket is activated, check if it can be matched with a buyer/seller
+-- If a match is found, insert into temp_resale_matches and delete from resale_queue
+
 CREATE TRIGGER match_resale_after_insert
 BEFORE INSERT ON resale_queue
 FOR EACH ROW
@@ -266,6 +281,104 @@ BEGIN
 END$$
 DELIMITER ;
 
+--- Event Triggers ---
+--- Event Trigger 1 ---
+-- Check for overlapping events in the same building on the same day
+
+DELIMITER $$
+CREATE TRIGGER check_event_overlap
+BEFORE INSERT ON events
+FOR EACH ROW
+BEGIN
+    DECLARE conflict_count INT;
+
+    SELECT COUNT(*)
+    INTO conflict_count
+    FROM events
+    WHERE
+        festival_ID = NEW.festival_ID
+        AND event_building = NEW.event_building
+        AND festival_day = NEW.festival_day
+        AND (
+            (NEW.start_time BETWEEN start_time - INTERVAL 5 MINUTE AND end_time + INTERVAL 5 MINUTE)
+            OR
+            (NEW.end_time BETWEEN start_time - INTERVAL 5 MINUTE AND end_time + INTERVAL 5 MINUTE)
+            OR
+            (start_time BETWEEN NEW.start_time - INTERVAL 5 MINUTE AND NEW.end_time + INTERVAL 5 MINUTE)
+            OR
+            (end_time BETWEEN NEW.start_time - INTERVAL 5 MINUTE AND NEW.end_time + INTERVAL 5 MINUTE)
+        );
+
+    IF conflict_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Conflict with another event in the same building, same day, time range +/-5 minutes';
+    END IF;
+END$$
+
+DELIMITER ;
+
+--- Ticket Triggers ---
+--- Ticket Trigger 1 ---
+-- VIP ticket limit check
+-- Ensure that the number of VIP tickets does not exceed 10% of total tickets for the event
+-- This is done using a trigger before inserting a new ticket
+
+DELIMITER $$
+
+CREATE TRIGGER check_vip_limit
+BEFORE INSERT ON ticket
+FOR EACH ROW
+BEGIN
+    DECLARE vip_count INT;
+    DECLARE total_count INT;
+
+    IF NEW.ticket_type = 'VIP' THEN
+        SELECT COUNT(*) INTO vip_count
+        FROM ticket
+        WHERE event_ID = NEW.event_ID AND ticket_type = 'VIP';
+
+        SELECT COUNT(*) INTO total_count
+        FROM ticket
+        WHERE event_ID = NEW.event_ID;
+
+        IF (vip_count + 1) > (0.1 * (total_count + 1)) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'VIP ticket limit exceeded for this event.';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
+--- Review Triggers ---
+--- Review Trigger 1 ---
+-- Ensure that a review can only be created if the ticket is activated
+-- This is done using a trigger before inserting a new review
+DELIMITER $$
+
+CREATE TRIGGER check_ticket_activation
+BEFORE INSERT ON review
+FOR EACH ROW
+BEGIN
+    DECLARE is_active BOOLEAN;
+
+    SELECT activated_status INTO is_active
+    FROM ticket
+    WHERE ticket_ID = NEW.ticket_ID;
+
+    IF is_active IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Ticket does not exist.';
+    ELSEIF is_active = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cannot review with inactive ticket.';
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+
 
 
 --- === CONSTRAINTS === ---
@@ -294,6 +407,8 @@ ADD CONSTRAINT chk_one_side_only CHECK (
     OR
     (buyer_ID IS NULL AND seller_ID IS NOT NULL)
 );
---hope
+--- Event Constraints ---
+--- Ο έλεγχος για  παράλληλα event γίνεται με trigger ---
+
 
 

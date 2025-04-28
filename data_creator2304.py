@@ -270,8 +270,27 @@ payment_methods = ['debit_card', 'credit_card', 'I-BAN']
 for _ in range(35):
     visitor_id = random.choice(visitor_ids)
     event_id = random.choice(event_ids)
-    ticket_type = random.choice(ticket_types)
+    
+    # Πριν διαλέξουμε τυχαίο τύπο, ελέγχουμε αν μπορούμε να βάλουμε VIP
+    cursor.execute("SELECT COUNT(*) FROM ticket WHERE event_ID = %s", (event_id,))
+    total_tickets = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM ticket WHERE event_ID = %s AND ticket_type = 'VIP'", (event_id,))
+    vip_tickets = cursor.fetchone()[0]
+
+    if total_tickets == 0:
+        # Αν δεν υπάρχουν άλλα tickets, βάζουμε γενική είσοδο
+        allowed_ticket_types = ['general_admission', 'backstage']
+    else:
+        # Αν το VIPs <= 10% * total, το επιτρέπουμε
+        if (vip_tickets + 1) <= 0.1 * (total_tickets + 1):
+            allowed_ticket_types = ['general_admission', 'VIP', 'backstage']
+        else:
+            allowed_ticket_types = ['general_admission', 'backstage']
+
+    ticket_type = random.choice(allowed_ticket_types)
     activated_ticket = random.choice([True, False])
+
     cursor.execute("""
         INSERT IGNORE INTO ticket (event_ID, visitor_ID, ticket_type, purchase_date, purchase_price, payment_method, activated_status)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -284,7 +303,7 @@ for _ in range(35):
         random.choice(payment_methods),
         activated_ticket
     ))
-    ticket_ids.append([cursor.lastrowid,event_id,visitor_id,ticket_type,activated_ticket])
+    ticket_ids.append([cursor.lastrowid, event_id, visitor_id, ticket_type, activated_ticket])
 
 
 
@@ -356,20 +375,23 @@ for ticket in random.sample(ticket_ids, k=30):
     
 
 # === 17. Reviews ===
-for tid in ticket_ids:
-    cursor.execute("""
-        INSERT INTO review (
-            ticket_ID, artist_performance, sound_and_lighting,
-            stage_presence, event_organization, overall_impression
-        ) VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        tid[0],
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5)),
-        str(random.randint(1, 5))
-    ))
+for ticket in ticket_ids:
+    ticket_id = ticket[0]
+    activated_status = ticket[4]  # Στο ticket_ids έχεις και το activated status
+
+    if activated_status:  # Μόνο αν είναι ενεργό
+        cursor.execute("""
+            INSERT INTO review (ticket_ID, artist_performance, sound_and_lighting, stage_presence, event_organization, overall_impression)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            ticket_id,
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5))
+        ))
+
 
 
 
