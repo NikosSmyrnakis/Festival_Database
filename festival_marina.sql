@@ -350,6 +350,33 @@ END$$
 
 DELIMITER ;
 
+--- Review Triggers ---
+--- Review Trigger 1 ---
+-- Ensure that a review can only be created if the ticket is activated
+-- This is done using a trigger before inserting a new review
+DELIMITER $$
+
+CREATE TRIGGER check_ticket_activation
+BEFORE INSERT ON review
+FOR EACH ROW
+BEGIN
+    DECLARE is_active BOOLEAN;
+
+    SELECT activated_status INTO is_active
+    FROM ticket
+    WHERE ticket_ID = NEW.ticket_ID;
+
+    IF is_active IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Ticket does not exist.';
+    ELSEIF is_active = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cannot review with inactive ticket.';
+    END IF;
+END$$
+
+DELIMITER ;
+
 
 
 
