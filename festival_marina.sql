@@ -68,7 +68,12 @@ CREATE TABLE events (
     event_start_time DATETIME NOT NULL,
     event_end_time DATETIME NOT NULL,
     building_ID INT,
-    event_duration INT GENERATED ALWAYS AS (TIMESTAMPDIFF(MINUTE, event_start_time, event_end_time)) STORED,
+    event_duration INT GENERATED ALWAYS AS (
+        CASE
+            WHEN event_end_time >= event_start_time THEN TIMESTAMPDIFF(MINUTE, event_start_time, event_end_time)
+            ELSE TIMESTAMPDIFF(MINUTE, event_start_time, event_end_time) + 1440
+        END     
+    ) STORED,
     FOREIGN KEY (building_ID) REFERENCES building(building_ID),
     FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID) -- ,
     -- CHECK (event_start_time < event_end_time)
@@ -82,8 +87,12 @@ CREATE TABLE performances (
     performance_type ENUM('warm up', 'headline', 'special_guest', 'finale') NOT NULL,
     performance_start_time DATETIME NOT NULL,
     performance_end_time DATETIME NOT NULL, -- Time plain didnt work because an event can begin at 11:00 and end at next day 01:00
-    performance_duration INT GENERATED ALWAYS AS (TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time)) STORED,
-    building_ID INT NOT NULL,
+    performance_duration INT GENERATED ALWAYS AS (
+        CASE
+            WHEN performance_end_time >= performance_start_time THEN TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time)
+            ELSE TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time) + 1440
+        END     
+    ) STORED,    building_ID INT NOT NULL,
     building_name VARCHAR(255) NOT NULL,
     FOREIGN KEY (event_ID) REFERENCES events(event_ID),
     FOREIGN KEY (building_ID) REFERENCES building(building_ID),
