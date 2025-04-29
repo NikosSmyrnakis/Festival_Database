@@ -326,13 +326,13 @@ BEGIN
         building_ID = NEW.building_ID
         AND event_ID = NEW.event_ID
         AND (
-            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 4 MINUTE AND performance_end_time + INTERVAL 6 MINUTE)
+            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 4 MINUTE AND performance_end_time + INTERVAL 4 MINUTE)
             OR
-            (NEW.performance_end_time BETWEEN performance_start_time - INTERVAL 4 MINUTE AND performance_end_time + INTERVAL 6 MINUTE)
+            (NEW.performance_end_time BETWEEN performance_start_time - INTERVAL 4 MINUTE AND performance_end_time + INTERVAL 4 MINUTE)
             OR
-            (performance_start_time BETWEEN NEW.performance_start_time - INTERVAL 4 MINUTE AND NEW.performance_end_time + INTERVAL 6 MINUTE)
+            (performance_start_time BETWEEN NEW.performance_start_time - INTERVAL 4 MINUTE AND NEW.performance_end_time + INTERVAL 4 MINUTE)
             OR
-            (performance_end_time BETWEEN NEW.performance_start_time - INTERVAL 4 MINUTE AND NEW.performance_end_time + INTERVAL 6 MINUTE)
+            (performance_end_time BETWEEN NEW.performance_start_time - INTERVAL 4 MINUTE AND NEW.performance_end_time + INTERVAL 4 MINUTE)
         );
 
     IF conflict_count > 0 THEN
