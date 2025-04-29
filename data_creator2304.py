@@ -165,7 +165,7 @@ def timedelta_to_str(t):
 performance_ids = []  # <== πρόσθεσέ το πριν τη for
 
 for eid in event_ids:
-    cursor.execute("SELECT start_time, end_time FROM events WHERE event_ID = %s", (eid,))
+    cursor.execute("SELECT event_start_time, event_end_time FROM events WHERE event_ID = %s", (eid,))
     start_str, end_str = [timedelta_to_str(t) for t in cursor.fetchone()]
     start_dt = datetime.strptime(start_str, "%H:%M:%S")
     end_dt = datetime.strptime(end_str, "%H:%M:%S")
@@ -182,11 +182,11 @@ for eid in event_ids:
             break
 
         performance_start_time_str = current_time.time().strftime("%H:%M:%S")
-        performance_end_time_str = (current_time.time() + duration).strftime("%H:%M:%S")
+        performance_end_time_str = (current_time + duration).time().strftime("%H:%M:%S")
         ptype = random.choice(['warm up', 'headline', 'special_guest', 'finale'])
         cursor.execute("""
-            INSERT INTO performances (event_ID, performance_start_time, performace_end_time, building_name, building_ID, performance_type)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO performances (event_ID, performance_start_time, performance_end_time, building_name, building_ID, performance_type)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             eid,
             performance_start_time_str,
