@@ -142,7 +142,7 @@ for building_id in random.sample(building_ids, k=random.randint(len(building_ids
                 start_time = (datetime.strptime(end_time, "%H:%M:%S")+ timedelta(minutes=random.randint(20, 100))).time().strftime("%H:%M:%S")
                 end_time = (datetime.strptime(start_time, "%H:%M:%S") + timedelta(minutes=random.randint(181, 220))).time().strftime("%H:%M:%S")
                 cursor.execute("""
-                    INSERT INTO events (festival_ID, event_name, festival_day, start_time, end_time, building_ID)
+                    INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID)
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, (
                     fid,

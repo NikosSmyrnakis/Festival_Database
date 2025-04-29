@@ -5,7 +5,7 @@
 CREATE TABLE festival (
     festival_ID INT PRIMARY KEY AUTO_INCREMENT,
     starting_date DATE NOT NULL,
-    duration INT NOT NULL ---in days
+    duration INT NOT NULL -- in days
 );
 
 -- Festival Location
