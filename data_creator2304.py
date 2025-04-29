@@ -132,15 +132,22 @@ for _ in range(8):
 event_ids = []
 for building_id in random.sample(building_ids, k=random.randint(len(building_ids)-2, len(building_ids))):
     for fid in festival_ids:
-        # Πάρε duration του συγκεκριμένου φεστιβάλ από τη βάση
-        cursor.execute("SELECT duration FROM festival WHERE festival_ID = %s", (fid,))
-        duration = cursor.fetchone()[0]
+        # Fetch festival's duration and starting date
+        cursor.execute("SELECT duration, starting_date FROM festival WHERE festival_ID = %s", (fid,))
+        duration, starting_date = cursor.fetchone()
         
-        for festival_day in range(1,duration+1):
+        for festival_day in range(1, duration + 1):
             end_time = "08:00:00"
-            for _ in range(random.randint(2, 4)):  # events ανά μέρα
-                start_time = (datetime.strptime(end_time, "%H:%M:%S")+ timedelta(minutes=random.randint(20, 100))).time().strftime("%H:%M:%S")
+            for _ in range(random.randint(2, 4)):  # number of events per day
+                # Calculate start and end times
+                start_time = (datetime.strptime(end_time, "%H:%M:%S") + timedelta(minutes=random.randint(20, 100))).time().strftime("%H:%M:%S")
                 end_time = (datetime.strptime(start_time, "%H:%M:%S") + timedelta(minutes=random.randint(181, 220))).time().strftime("%H:%M:%S")
+
+                # Combine the date and time
+                start_datetime = datetime.combine(starting_date, datetime.strptime(start_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
+                end_datetime = datetime.combine(starting_date, datetime.strptime(end_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
+
+                # Insert event into the events table
                 cursor.execute("""
                     INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID)
                     VALUES (%s, %s, %s, %s, %s, %s)
@@ -148,8 +155,8 @@ for building_id in random.sample(building_ids, k=random.randint(len(building_ids
                     fid,
                     f"{fake.word().capitalize()} Concert",
                     festival_day,
-                    start_time,
-                    end_time,
+                    start_datetime,
+                    end_datetime,
                     building_id
                 ))
                 event_ids.append(cursor.lastrowid)
@@ -163,16 +170,23 @@ def timedelta_to_str(t):
 
 # === 7. Performances ===
 performance_ids = []  # <== πρόσθεσέ το πριν τη for
-
 for eid in event_ids:
+    # Fetch start and end times as DATETIME from the events table
     cursor.execute("SELECT event_start_time, event_end_time FROM events WHERE event_ID = %s", (eid,))
-    start_str, end_str = [timedelta_to_str(t) for t in cursor.fetchone()]
-    start_dt = datetime.strptime(start_str, "%H:%M:%S")
-    end_dt = datetime.strptime(end_str, "%H:%M:%S")
+    event_start_time, event_end_time = cursor.fetchone()
+    
+    # These are already DATETIME, so no need to convert from strings to datetime
+    start_dt = event_start_time
+    end_dt = event_end_time
+    
+    # Fetch the building_id and building_name
     cursor.execute("SELECT building_ID FROM events WHERE event_ID = %s", (eid,))
     building_id = cursor.fetchone()[0]
-    cursor.execute("SELECT building_name FROM building WHERE building_ID = (SELECT building_ID FROM events WHERE event_ID = %s)", (eid,))
+    
+    cursor.execute("SELECT building_name FROM building WHERE building_ID = %s", (building_id,))
     building_name = cursor.fetchone()[0]
+
+    # Initialize the current time to start time of the event
     current_time = start_dt
     performance_count = random.randint(1, 3)
 
@@ -180,26 +194,28 @@ for eid in event_ids:
         duration = timedelta(minutes=random.randint(30, 180))
         if current_time + duration > end_dt:
             break
+        
+        performance_start_time = current_time
+        performance_end_time = current_time + duration
 
-        performance_start_time_str = current_time.time().strftime("%H:%M:%S")
-        performance_end_time_str = (current_time + duration).time().strftime("%H:%M:%S")
         ptype = random.choice(['warm up', 'headline', 'special_guest', 'finale'])
         cursor.execute("""
             INSERT INTO performances (event_ID, performance_start_time, performance_end_time, building_name, building_ID, performance_type)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             eid,
-            performance_start_time_str,
-            performance_end_time_str,
+            performance_start_time,  # DATETIME
+            performance_end_time,    # DATETIME
             building_name,
             building_id,
             ptype
         ))
         
-        # ✅ Αποθήκευση performance_ID
+        # Save performance_ID
         performance_ids.append(cursor.lastrowid)
 
-        current_time += duration + timedelta(minutes=random.randint(5, 15))  # Διάλειμμα μεταξύ performances
+        # Move current_time forward with a random break between performances
+        current_time += duration + timedelta(minutes=random.randint(5, 15))
 
 
 # === 8. Role of Personel on Event (many-to-many) ===
