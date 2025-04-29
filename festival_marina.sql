@@ -5,7 +5,7 @@
 CREATE TABLE festival (
     festival_ID INT PRIMARY KEY AUTO_INCREMENT,
     starting_date DATE NOT NULL,
-    duration INT NOT NULL
+    duration INT NOT NULL ---in days
 );
 
 -- Festival Location
@@ -65,13 +65,13 @@ CREATE TABLE events (
     festival_ID INT,
     event_name VARCHAR(255) NOT NULL,
     festival_day INT NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    event_building INT,
-    duration INT GENERATED ALWAYS AS (TIMESTAMPDIFF(MINUTE, start_time, end_time)) STORED,
-    FOREIGN KEY (event_building) REFERENCES building(building_ID),
+    event_start_time TIME NOT NULL,
+    event_end_time TIME NOT NULL,
+    building_ID INT,
+    event_duration INT GENERATED ALWAYS AS (TIMESTAMPDIFF(MINUTE, event_start_time, event_end_time)) STORED,
+    FOREIGN KEY (building_ID) REFERENCES building(building_ID),
     FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID),
-    CHECK (start_time < end_time)
+    CHECK (event_start_time < event_end_time)
 );
 
 -- Performances
@@ -79,11 +79,16 @@ CREATE TABLE events (
 CREATE TABLE performances (
     performance_ID INT PRIMARY KEY AUTO_INCREMENT,
     event_ID INT,
-    performance_time TIME NOT NULL,
-    building_name VARCHAR(255) NOT NULL,
-    performance_duration INT NOT NULL,
     performance_type ENUM('warm up', 'headline', 'special_guest', 'finale') NOT NULL,
-    FOREIGN KEY (event_ID) REFERENCES events(event_ID)
+    performance_start_time TIME NOT NULL,
+    performance_end_time TIME NOT NULL,
+    performance_duration INT GENERATED ALWAYS AS (TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time)) STORED,
+    building_ID INT NOT NULL,
+    building_name VARCHAR(255) NOT NULL,
+    FOREIGN KEY (event_ID) REFERENCES events(event_ID),
+    FOREIGN KEY (building_ID) REFERENCES building(building_ID),
+    CHECK (performance_start_time < performance_end_time),
+    CHECK (performance_duration <= 180) -- max duration of a performance is 3 hours
 );
 
 -- Personel-Event Relationship (many-to-many)
@@ -283,35 +288,56 @@ DELIMITER ;
 
 --- Event Triggers ---
 --- Event Trigger 1 ---
+DELIMITER $$
+
+CREATE TRIGGER check_festival_day
+BEFORE INSERT ON events
+FOR EACH ROW
+BEGIN
+    DECLARE fest_duration INT;
+
+    SELECT duration INTO fest_duration
+    FROM festival
+    WHERE festival_ID = NEW.festival_ID;
+
+    IF NEW.festival_day > fest_duration THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'festival_day cannot be greater than festival duration.';
+    END IF;
+END$$
+
+DELIMITER ;
+
+---Performance Triggers---<<<<<<<<<<
+--- Performance Trigger 1 ---
 -- Check for overlapping events in the same building on the same day
 
 DELIMITER $$
-CREATE TRIGGER check_event_overlap
-BEFORE INSERT ON events
+CREATE TRIGGER check_performance_overlap
+BEFORE INSERT ON performances
 FOR EACH ROW
 BEGIN
     DECLARE conflict_count INT;
 
     SELECT COUNT(*)
     INTO conflict_count
-    FROM events
+    FROM performances
     WHERE
-        festival_ID = NEW.festival_ID
-        AND event_building = NEW.event_building
-        AND festival_day = NEW.festival_day
+        building_ID = NEW.building_ID
+        AND event_ID = NEW.event_ID
         AND (
-            (NEW.start_time BETWEEN start_time - INTERVAL 5 MINUTE AND end_time + INTERVAL 5 MINUTE)
+            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE)
             OR
-            (NEW.end_time BETWEEN start_time - INTERVAL 5 MINUTE AND end_time + INTERVAL 5 MINUTE)
+            (NEW.performance_end_time BETWEEN performance_start_time - INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE)
             OR
-            (start_time BETWEEN NEW.start_time - INTERVAL 5 MINUTE AND NEW.end_time + INTERVAL 5 MINUTE)
+            (performance_start_time BETWEEN NEW.performance_start_time - INTERVAL 5 MINUTE AND NEW.performance_end_time + INTERVAL 5 MINUTE)
             OR
-            (end_time BETWEEN NEW.start_time - INTERVAL 5 MINUTE AND NEW.end_time + INTERVAL 5 MINUTE)
+            (performance_end_time BETWEEN NEW.performance_start_time - INTERVAL 5 MINUTE AND NEW.performance_end_time + INTERVAL 5 MINUTE)
         );
 
     IF conflict_count > 0 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Conflict with another event in the same building, same day, time range +/-5 minutes';
+        SET MESSAGE_TEXT = 'Conflict with another performance in the same building, same day, time range +/-5 minutes';
     END IF;
 END$$
 
