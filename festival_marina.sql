@@ -20,7 +20,7 @@ CREATE TABLE festival_location (
     geo_coordinates VARCHAR(100) NOT NULL,
     FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID)
 );
--- hello 
+
 -- Personel
 -- Stores personal and professional information about event staff
 CREATE TABLE personel (
@@ -246,6 +246,35 @@ CREATE TABLE temp_resale_matches (
 
 
 --- === TRIGGERS === ---
+
+-- Deletion Triggers
+-- Prevent Festival Deletion Trigger
+DELIMITER $$
+
+CREATE TRIGGER prevent_festival_deletion
+BEFORE DELETE ON festival
+FOR EACH ROW
+BEGIN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Festival cannot be deleted.';
+END$$
+
+DELIMITER ;
+
+--- Prevent Performance Deletion Trigger
+DELIMITER $$
+
+CREATE TRIGGER prevent_performance_deletion
+BEFORE DELETE ON performances
+FOR EACH ROW
+BEGIN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Performance cannot be deleted.';
+END$$
+
+DELIMITER ;
+
+
 --- Visitor Triggers --- 
 
 --- Visitor Trigger 1 --- 
