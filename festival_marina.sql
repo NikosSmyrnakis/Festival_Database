@@ -46,17 +46,42 @@ CREATE TABLE building (
 -- Artist
 -- Stores artist profiles and metadata
 CREATE TABLE artist (
-    artist_id INT PRIMARY KEY AUTO_INCREMENT,
+    artist_ID INT PRIMARY KEY AUTO_INCREMENT,
     artist_name VARCHAR(255) NOT NULL,
     stage_name VARCHAR(255),  -- can be NULL
-    date_of_birth DATE NOT NULL,
-    music_genre VARCHAR(100) NOT NULL,
-    website VARCHAR(255),     -- can be NULL
-    instagram VARCHAR(255),   -- can be NULL
-    group_name VARCHAR(255) NOT NULL,
-    date_of_debut DATE NOT NULL
+    artist_date_of_birth DATE NOT NULL,
+    artist_debute DATE NOT NULL,
+    artist_genre VARCHAR(100) NOT NULL,
+    artist_subgenre VARCHAR(100),
+    artist_website VARCHAR(255),     -- can be NULL
+    artist_instagram VARCHAR(255),   -- can be NULL
+    num_of_consecutive_years_participating INT DEFAULT 0,
+    CHECK (0 <= num_of_consecutive_years_participating AND num_of_consecutive_years_participating <= 3) -- number of years the artist has participated in the festival
 );
 
+-- Group 
+-- Stores information about groups, including their members
+CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
+    group_ID INT PRIMARY KEY AUTO_INCREMENT,
+    group_name VARCHAR(255) NOT NULL,
+    group_date_of_birth DATE NOT NULL,
+    group_debute DATE NOT NULL,
+    group_genre VARCHAR(100) NOT NULL,
+    group_subgerne VARCHAR(100),
+    group_website VARCHAR(255),     -- can be NULL
+    group_instagram VARCHAR(255),   -- can be NULL
+    member_names TEXT 
+    );    
+
+-- Group Members
+-- Stores the relationship between groups and their members
+CREATE TABLE group_members (
+    group_ID INT,
+    artist_ID INT,
+    PRIMARY KEY (group_ID, artist_ID),
+    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
+    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID)
+); 
 
 -- Events
 -- Represents a specific event held as part of a festival
@@ -114,10 +139,18 @@ CREATE TABLE role_of_personel_on_event (
 -- Artist-Performance Relationship (many-to-many)
 -- Connects artists to their performances
 CREATE TABLE artist_performances (
-    artist_id INT,
+    artist_ID INT,
     performance_ID INT,
-    PRIMARY KEY (artist_id, performance_ID),
-    FOREIGN KEY (artist_id) REFERENCES artist(artist_id),
+    PRIMARY KEY (artist_ID, performance_ID),
+    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID),
+    FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
+);
+
+CREATE TABLE group_performances (
+    group_ID INT,
+    performance_ID INT,
+    PRIMARY KEY (group_ID, performance_ID),
+    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
     FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
 );
 
@@ -206,6 +239,10 @@ CREATE TABLE temp_resale_matches (
     FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
+
+
+-- =========================================
+
 
 
 --- === TRIGGERS === ---
@@ -317,7 +354,7 @@ END$$
 
 DELIMITER ;
 
----Performance Triggers---<<<<<<<<<<
+---Performance Triggers---
 --- Performance Trigger 1 ---
 -- Check for overlapping events in the same building on the same day
 
@@ -380,6 +417,30 @@ BEGIN
 END$$
 
 DELIMITER ;
+-- Group Trigger 1 ---
+-- When a new group member is added, update the member_names field in the group table
+
+DELIMITER $$
+
+CREATE TRIGGER group_member_names
+AFTER INSERT ON group_members
+FOR EACH ROW
+BEGIN
+    DECLARE artist_name VARCHAR(255);
+
+    -- Λήψη του artist_name από τον πίνακα artist
+    SELECT artist_name INTO artist_name
+    FROM artist
+    WHERE artist_ID = NEW.artist_ID;
+
+    -- Ενημέρωση του πεδίου member_names στον πίνακα group
+    UPDATE `group`
+    SET member_names = IFNULL(member_names, '') || artist_name || '\n'
+    WHERE group_ID = NEW.group_ID;
+END$$
+
+DELIMITER ;
+
 
 --- Review Triggers ---
 --- Review Trigger 1 ---
@@ -407,9 +468,6 @@ BEGIN
 END$$
 
 DELIMITER ;
-
-
-
 
 
 --- === CONSTRAINTS === ---
