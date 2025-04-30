@@ -49,14 +49,28 @@ CREATE TABLE artist (
     artist_id INT PRIMARY KEY AUTO_INCREMENT,
     artist_name VARCHAR(255) NOT NULL,
     stage_name VARCHAR(255),  -- can be NULL
-    date_of_birth DATE NOT NULL,
-    music_genre VARCHAR(100) NOT NULL,
-    website VARCHAR(255),     -- can be NULL
-    instagram VARCHAR(255),   -- can be NULL
-    group_name VARCHAR(255) NOT NULL,
-    date_of_debut DATE NOT NULL
+    artist_date_of_birth DATE NOT NULL,
+    artist_debute DATE NOT NULL,
+    artist_genre VARCHAR(100) NOT NULL,
+    artist_subgerne VARCHAR(100),
+    artist_website VARCHAR(255),     -- can be NULL
+    artist_instagram VARCHAR(255),   -- can be NULL
+    num_of_consecutive_years_participating INT DEFAULT 0
+    CHECK (0 <= num_of_consecutive_years_participating <= 3) -- number of years the artist has participated in the festival
 );
 
+-- Group 
+CREATE TABLE group (
+    group_id INT PRIMARY KEY AUTO_INCREMENT,
+    group_name VARCHAR(255) NOT NULL,
+    member_list
+    group_date_of_birth DATE NOT NULL,
+    group_debute DATE NOT NULL,
+    group_genre VARCHAR(100) NOT NULL,
+    group_subgerne VARCHAR(100),
+    group_website VARCHAR(255),     -- can be NULL
+    group_instagram VARCHAR(255)   -- can be NULL
+);    
 
 -- Events
 -- Represents a specific event held as part of a festival
@@ -197,6 +211,10 @@ CREATE TABLE temp_resale_matches (
     FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
+
+
+-- =========================================
+
 
 
 --- === TRIGGERS === ---
