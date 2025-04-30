@@ -20,7 +20,7 @@ CREATE TABLE festival_location (
     geo_coordinates VARCHAR(100) NOT NULL,
     FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID)
 );
-
+-- hello 
 -- Personel
 -- Stores personal and professional information about event staff
 CREATE TABLE personel (
