@@ -3,6 +3,8 @@ import random
 from datetime import datetime, timedelta
 from faker import Faker
 #nikos
+
+
 def clear_all(conn,cursor):
     # === Clear all tables (in dependency-safe order) ===
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
@@ -47,6 +49,8 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 clear_all(conn,cursor)
+
+
 # === Helper ===
 def random_time():
     hour = random.randint(10, 22)
