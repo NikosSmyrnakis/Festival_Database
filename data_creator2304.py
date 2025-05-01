@@ -130,13 +130,14 @@ for _ in range(8):
 
 # === Events: για κάθε μέρα του φεστιβάλ (0 έως duration - 1) ===
 event_ids = []
-for building_id in random.sample(building_ids, k=random.randint(len(building_ids)-2, len(building_ids))):
-    for fid in festival_ids:
-        # Fetch festival's duration and starting date
-        cursor.execute("SELECT duration, starting_date FROM festival WHERE festival_ID = %s", (fid,))
-        duration, starting_date = cursor.fetchone()
-        
-        for festival_day in range(1, duration + 1):
+
+for fid in festival_ids:
+    # Fetch festival's duration and starting date
+    cursor.execute("SELECT duration, starting_date FROM festival WHERE festival_ID = %s", (fid,))
+    duration, starting_date = cursor.fetchone()
+    
+    for festival_day in range(1, duration + 1):
+        for building_id in random.sample(building_ids, k=random.randint(len(building_ids)-2, len(building_ids))):
             end_time = "08:00:00"
             for _ in range(random.randint(2, 4)):  # number of events per day
                 # Calculate start and end times
