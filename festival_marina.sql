@@ -70,7 +70,7 @@ CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
     group_subgerne VARCHAR(100),
     group_website VARCHAR(255),     -- can be NULL
     group_instagram VARCHAR(255),   -- can be NULL
-    member_names TEXT 
+    member_names TEXT DEFAULT ''
     );    
 
 -- Group Members
@@ -119,6 +119,8 @@ CREATE TABLE performances (
         END     
     ) STORED,    building_ID INT NOT NULL,
     building_name VARCHAR(255) NOT NULL,
+    artist_ID INT DEFAULT NULL,
+    group_ID INT DEFAULT NULL,
     FOREIGN KEY (event_ID) REFERENCES events(event_ID),
     FOREIGN KEY (building_ID) REFERENCES building(building_ID),
     CHECK (performance_start_time < performance_end_time),
@@ -138,6 +140,9 @@ CREATE TABLE role_of_personel_on_event (
 
 -- Artist-Performance Relationship (many-to-many)
 -- Connects artists to their performances
+
+
+/*
 CREATE TABLE artist_performances (
     artist_ID INT,
     performance_ID INT,
@@ -153,6 +158,8 @@ CREATE TABLE group_performances (
     FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
     FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
 );
+*/
+
 
 -- Visitor
 -- Stores personal data for individuals attending events
@@ -455,16 +462,16 @@ CREATE TRIGGER group_member_names
 AFTER INSERT ON group_members
 FOR EACH ROW
 BEGIN
-    DECLARE artist_name VARCHAR(255);
+    DECLARE artist_name_var VARCHAR(255);
 
-    -- Λήψη του artist_name από τον πίνακα artist
-    SELECT artist_name INTO artist_name
+    -- Get the artist_name from the artist table
+    SELECT artist_name INTO artist_name_var
     FROM artist
     WHERE artist_ID = NEW.artist_ID;
 
-    -- Ενημέρωση του πεδίου member_names στον πίνακα group
+    -- Update the member_names field in the group table
     UPDATE `group`
-    SET member_names = IFNULL(member_names, '') || artist_name || '\n'
+    SET member_names = CONCAT(member_names, artist_name_var, ', ')
     WHERE group_ID = NEW.group_ID;
 END$$
 
