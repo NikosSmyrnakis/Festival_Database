@@ -268,7 +268,7 @@ for eid in event_ids:
 #marina's bit
 # === 9. Visitors ===
 visitor_ids = []
-for _ in range(10):
+for _ in range(150):
     cursor.execute("""
         INSERT INTO visitor (first_name, last_name, telephone, email, age)
         VALUES (%s, %s, %s, %s, %s)
@@ -421,7 +421,15 @@ payment_methods = ['debit_card', 'credit_card', 'I-BAN']
 for _ in range(220):
     visitor_id = random.choice(visitor_ids)
     event_id = random.choice(event_ids)
+    #Check if the visitor already has a ticket for that event
+    cursor.execute("""
+        SELECT 1 FROM ticket 
+        WHERE visitor_ID = %s AND event_ID = %s
+        LIMIT 1
+    """, (visitor_id, event_id))
     
+    if cursor.fetchone():
+        continue  # visitor already has a ticket for that event
     # Πριν διαλέξουμε τυχαίο τύπο, ελέγχουμε αν μπορούμε να βάλουμε VIP
     cursor.execute("SELECT COUNT(*) FROM ticket WHERE event_ID = %s", (event_id,))
     total_tickets = cursor.fetchone()[0]
