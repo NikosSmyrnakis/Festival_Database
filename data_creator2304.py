@@ -113,24 +113,22 @@ for _ in range(10):
 
 # === 5. Artists ===
 artist_ids = []
-genres = ['rock', 'pop', 'jazz', 'electronic', 'hip hop']
+#genres = ['rock', 'pop', 'jazz', 'electronic', 'hip hop']
 for _ in range(50):
     dob = fake.date_of_birth(minimum_age=20, maximum_age=50)
     debut = dob + timedelta(days=365 * random.randint(1, 20))
-    genre1 = random.choice(genres)
-    genre2 = random.choice([genre for genre in genres if genre != genre1])
+    #genre1 = random.choice(genres)
+    #genre2 = random.choice([genre for genre in genres if genre != genre1])
     cursor.execute("""
-        INSERT INTO artist (artist_name, stage_name, artist_date_of_birth, artist_genre, artist_website, artist_instagram, artist_debute, artist_subgenre,num_of_consecutive_years_participating)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO artist (artist_name, stage_name, artist_date_of_birth, artist_website, artist_instagram, artist_debute,num_of_consecutive_years_participating)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """, (
         fake.name(),
         fake.first_name() if random.random() < 0.7 else None,
         dob,
-        genre1,
         fake.url(),
         fake.url(),
         debut,
-        genre2,
         random.randint(0,3)
     ))
     artist_ids.append(cursor.lastrowid)
@@ -140,21 +138,46 @@ group_ids = []
 for _ in range(15):
     dob = fake.date_of_birth(minimum_age=20, maximum_age=50)
     debut = dob + timedelta(days=365 * random.randint(1, 20))
-    genre1 = random.choice(genres)
-    genre2 = random.choice([genre for genre in genres if genre != genre1])
+    #genre1 = random.choice(genres)
+    #genre2 = random.choice([genre for genre in genres if genre != genre1])
     cursor.execute("""
-        INSERT INTO `group` (group_name, group_date_of_birth, group_debute, group_genre, group_subgerne, group_website, group_instagram)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO `group` (group_name, group_date_of_birth, group_debute, group_website, group_instagram)
+        VALUES (%s, %s, %s, %s, %s)
     """, (
         fake.name()+" Band",
         dob,
         debut,
-        genre1,
-        genre2,
         fake.url(),
         fake.url(),
     ))
     group_ids.append(cursor.lastrowid)
+
+# ====  GENRE ===
+genres = [
+    ('Rock', 'Hard Rock'),
+    ('Jazz', 'Smooth Jazz'),
+    ('Pop', None),
+    ('Electronic', 'House'),
+    ('Hip-Hop', 'Trap'),
+    ('Classical', 'Baroque'),
+]
+
+for artist_id in artist_ids:
+    selected_genres = random.sample(genres, random.randint(1, 3))  # 1–3 genres per artist
+    for genre,subgenre in selected_genres:
+        cursor.execute("""
+            INSERT INTO genre (artist_ID, genre_name, subgenre_name)
+            VALUES (%s,%s,%s)
+        """, (artist_id,genre,subgenre))
+
+for group_id in group_ids:
+    selected_genres = random.sample(genres, random.randint(1, 3))  # 1–3 genres per artist
+    for genre,subgenre in selected_genres:
+        cursor.execute("""
+            INSERT INTO genre (group_ID, genre_name, subgenre_name)
+            VALUES (%s,%s,%s)
+        """, (group_id,genre,subgenre))
+
 
 # === Events: για κάθε μέρα του φεστιβάλ (0 έως duration - 1) ===
 event_ids = []

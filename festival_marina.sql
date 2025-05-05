@@ -51,8 +51,6 @@ CREATE TABLE artist (
     stage_name VARCHAR(255),  -- can be NULL
     artist_date_of_birth DATE NOT NULL,
     artist_debute DATE NOT NULL,
-    artist_genre VARCHAR(100) NOT NULL,
-    artist_subgenre VARCHAR(100),
     artist_website VARCHAR(255),     -- can be NULL
     artist_instagram VARCHAR(255),   -- can be NULL
     num_of_consecutive_years_participating INT DEFAULT 0,
@@ -66,12 +64,21 @@ CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
     group_name VARCHAR(255) NOT NULL,
     group_date_of_birth DATE NOT NULL,
     group_debute DATE NOT NULL,
-    group_genre VARCHAR(100) NOT NULL,
-    group_subgerne VARCHAR(100),
     group_website VARCHAR(255),     -- can be NULL
     group_instagram VARCHAR(255),   -- can be NULL
     member_names TEXT DEFAULT ''
     );    
+
+CREATE TABLE genre (
+    genre_ID INT PRIMARY KEY AUTO_INCREMENT,
+    genre_name VARCHAR(100) NOT NULL,
+    subgenre_name VARCHAR(100),
+    artist_ID INT,
+    group_ID INT,
+    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID),
+    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
+);
+
 
 -- Group Members
 -- Stores the relationship between groups and their members
