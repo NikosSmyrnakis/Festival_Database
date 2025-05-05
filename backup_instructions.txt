@@ -1,6 +1,0 @@
-to make a backup:
-mysqldump -u root -p db1 > backup_file.sql
-
-
-to make the inserts:
-mysqldump -u root -p --no-create-info --skip-triggers db1 > db1_inserts.sql
