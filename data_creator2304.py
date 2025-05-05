@@ -324,6 +324,18 @@ if False:
                 VALUES (%s, %s)
             """, (gid, pid))
 
+def is_violation_of_3_consecutive_years(existing_years, new_year):
+    years = sorted(set(existing_years + [new_year]))
+    count = 1
+    for i in range(1, len(years)):
+        if years[i] == years[i - 1] + 1:
+            count += 1
+            if count > 3:
+                return True
+        else:
+            count = 1
+    return False
+
 for pid in performance_ids:
     while True:
         cursor.execute("""
@@ -332,6 +344,10 @@ for pid in performance_ids:
             WHERE performance_ID = %s
         """, (pid,))
         temp_event_id,performance_start_time,performance_end_time = cursor.fetchone()
+
+        # Πάρε τη χρονιά της παράστασης
+        cursor.execute("SELECT starting_date FROM festival f JOIN events e ON e.festival_ID = f.festival_ID WHERE e.event_ID = %s", (temp_event_id,))
+        festival_year = cursor.fetchone()[0].year
 
         if random.random() < 0.3:  # 50% chance to pick artist or group
             # Randomly select an artist ID
@@ -351,8 +367,18 @@ for pid in performance_ids:
                 if event_id == temp_event_id and (performance_start_time < end_time and performance_end_time > start_time):
                     conflict = True
                     break
+            # 2. Check for 3-year violation
+            cursor.execute("""
+                SELECT DISTINCT YEAR(f.starting_date)
+                FROM festival f
+                JOIN events e ON f.festival_ID = e.festival_ID
+                JOIN performances p ON e.event_ID = p.event_ID
+                WHERE p.artist_ID = %s
+            """, (aid,))
+            years = [row[0] for row in cursor.fetchall()]
+            violation = is_violation_of_3_consecutive_years(years, festival_year)
 
-            if not conflict:
+            if not conflict and not violation:
                 cursor.execute("""
                         UPDATE performances
                         SET artist_ID = %s
@@ -378,8 +404,20 @@ for pid in performance_ids:
                 if event_id == pid and (performance_start_time < end_time and performance_end_time > start_time):
                     conflict = True
                     break
+            
+            # 2. Check for 3-year violation
+            cursor.execute("""
+                SELECT DISTINCT YEAR(f.starting_date)
+                FROM festival f
+                JOIN events e ON f.festival_ID = e.festival_ID
+                JOIN performances p ON e.event_ID = p.event_ID
+                WHERE p.group_ID = %s
+            """, (gid,))
+            years = [row[0] for row in cursor.fetchall()]
+            violation = is_violation_of_3_consecutive_years(years, festival_year)
 
-            if not conflict:
+
+            if not conflict and not violation:
                 cursor.execute("""
                         UPDATE performances
                         SET group_ID = %s

@@ -5,7 +5,7 @@ SELECT
 FROM genre g1
 JOIN genre g2 
     ON g1.artist_ID = g2.artist_ID 
-    AND g1.genre_name < g2.genre_name  -- για να μην έχουμε duplicate ζεύγη (Rock-Jazz vs Jazz-Rock)
+    AND g1.genre_name < g2.genre_name
 JOIN artist a ON a.artist_ID = g1.artist_ID
 JOIN performances p ON p.artist_ID = a.artist_ID
 JOIN events e ON p.event_ID = e.event_ID
