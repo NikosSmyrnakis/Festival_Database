@@ -19,5 +19,7 @@ SELECT
     af.participation_count
 FROM artist_festival_counts af
 JOIN max_participation mp ON 1=1
-WHERE af.participation_count <= mp.max_count - 5;
--- may not work
+WHERE af.participation_count >= mp.max_count - 5 
+    AND af.participation_count < mp.max_count
+ORDER BY af.participation_count DESC;
+
