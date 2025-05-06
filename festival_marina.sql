@@ -256,8 +256,20 @@ CREATE TABLE temp_resale_matches (
 
 
 -- =========================================
-
-
+-- INDEXES
+CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID);
+CREATE INDEX idx_artist_name ON artist(artist_name);
+CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID);
+CREATE INDEX idx_perf_group_event ON performances(group_ID, event_ID);
+CREATE INDEX idx_events_festival ON events(festival_ID);
+CREATE INDEX idx_ticket_visitor_event ON ticket(visitor_ID, event_ID);
+CREATE INDEX idx_ticket_event ON ticket(event_ID);
+CREATE INDEX idx_review_ticket ON review(ticket_ID);
+CREATE INDEX idx_genre_artist ON genre(artist_ID);
+CREATE INDEX idx_genre_group ON genre(group_ID);
+CREATE INDEX idx_role_event_role ON role_of_personel_on_event(event_ID, role);
+CREATE INDEX idx_group_members_artist ON group_members(artist_ID);
+CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name);
 
 --- === TRIGGERS === ---
 
