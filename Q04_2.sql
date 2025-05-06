@@ -14,7 +14,9 @@ JOIN performances p FORCE INDEX (idx_perf_event_artist)
     ON e.event_ID = p.event_ID AND t.event_ID = p.event_ID
 JOIN artist a FORCE INDEX (idx_artist_name) 
     ON p.artist_ID = a.artist_ID
-WHERE a.artist_ID = (SELECT artist_ID FROM artist FORCE INDEX (idx_artist_name)WHERE artist_name = 'Amanda Cross')
+WHERE a.artist_ID = (SELECT artist_ID FROM artist FORCE INDEX (idx_artist_name)WHERE artist_name = 'John Martin')
+    AND r.artist_performance IS NOT NULL
+    AND r.overall_impression IS NOT NULL
 GROUP BY a.artist_name;
 
 -- Without indexes Block Nested Loop Join
@@ -32,6 +34,6 @@ JOIN performances p IGNORE INDEX (idx_perf_event_artist)
     ON e.event_ID = p.event_ID AND t.event_ID = p.event_ID
 JOIN artist a IGNORE INDEX (idx_artist_name) 
     ON p.artist_ID = a.artist_ID
-WHERE a.artist_ID = (SELECT artist_ID FROM artist IGNORE INDEX (idx_artist_name)WHERE artist_name = 'Amanda Cross')
+WHERE a.artist_ID = (SELECT artist_ID FROM artist IGNORE INDEX (idx_artist_name)WHERE artist_name = 'John Martin')
 GROUP BY a.artist_name;
 
