@@ -255,8 +255,8 @@ CREATE TABLE temp_resale_matches (
 );
 
 
--- =========================================
--- INDEXES
+-- === INDEXES === ---
+
 CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID);
 CREATE INDEX idx_artist_name ON artist(artist_name);
 CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID);
