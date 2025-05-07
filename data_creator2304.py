@@ -618,27 +618,45 @@ for ticket in random.sample(ticket_ids, k=200):
 
 
 # === 17. Reviews ===
-if False:
-    for ticket in ticket_ids:
-        ticket_id = ticket[0]
-        activated_status = ticket[4]  # Στο ticket_ids έχεις και το activated status
+# Για κάθε εισιτήριο, βρες ένα συμβατό performance από το ίδιο event
+# 1. Πάρε όλα τα ενεργά εισιτήρια με το event_ID τους
+cursor.execute("""
+    SELECT ticket_ID, event_ID
+    FROM ticket
+    WHERE activated_status = TRUE
+""")
+active_tickets = cursor.fetchall()
 
-        if activated_status:  # Μόνο αν είναι ενεργό
-            cursor.execute("""
-                INSERT INTO review (ticket_ID, artist_performance, sound_and_lighting, stage_presence, event_organization, overall_impression)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (
-                ticket_id,
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5))
-            ))
+# 2. Για κάθε εισιτήριο, βρες όλα τα performance_IDs από το ίδιο event
+for ticket_id, event_id in active_tickets:
+    cursor.execute("""
+        SELECT performance_ID
+        FROM performances
+        WHERE event_ID = %s
+    """, (event_id,))
+    compatible_performances = cursor.fetchall()
 
+    if compatible_performances:  # αν υπάρχουν συμβατά performances
+        performance_id = random.choice(compatible_performances)[0]
 
+        cursor.execute("""
+            INSERT INTO review (
+                ticket_ID, performance_ID,
+                artist_performance, sound_and_lighting,
+                stage_presence, event_organization, overall_impression
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            ticket_id,
+            performance_id,
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5))
+        ))
 
-
+# Commit & close
 conn.commit()
 cursor.close()
 conn.close()
