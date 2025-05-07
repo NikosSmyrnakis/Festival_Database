@@ -1,12 +1,12 @@
-# Festival Database Project - `db1`
+# 🎶 Pulse University Festival – Database Project (`db1`)
 
-For the purposes of international music festival *Pulse University* we developed a database called **`db1`**.
+For the purposes of the international music festival *Pulse University*, we developed a database called **`db1`**.
 
 ---
 
-## STAGE 1
+## 🧱 STAGE 1 – Initial Setup
 
-### 📄 STAGE 1 FILE DESCRIPTION
+### 📄 File Description
 
 In this stage, our project consists of the following files:
 
@@ -29,7 +29,7 @@ In this stage, our project consists of the following files:
 
 ---
 
-### 🧪 STAGE 1 TUTORIAL
+### 🧪 Tutorial
 
 From the project directory, we can create and populate the DB by following these steps:
 
@@ -41,18 +41,9 @@ c) python data_creator2304.py
 
 ---
 
-## MOVING ON
+## 💾 STAGE 2 – Backup & Restore
 
-After extensive tinkering, we reached a point where we were ready to begin writing queries.  
-To work with a consistent database (since the Python script introduces randomness), we decided to create **backups** of specific DB states.  
-
-This leads us to:
-
----
-
-## STAGE 2
-
-### 📄 STAGE 2 FILE DESCRIPTION
+### 📄 File Description
 
 In this stage, we added the following **backup-related** files to our repository:
 
@@ -74,7 +65,7 @@ In this stage, we added the following **backup-related** files to our repository
 
 ---
 
-### 💾 STAGE 2 TUTORIAL
+### 💡 Tutorial
 
 To **create a full backup** (`backup_db.sql`):
 
@@ -103,34 +94,52 @@ dii) source read_backup.sql
 
 ---
 
-## 📊 ΣΧΟΛΙΑ ΓΙΑ ΤΗΝ ΥΛΟΠΟΙΗΣΗ
+## 🧠 STAGE 3 – Query Development & Optimization
+
+### 📄 File Description
+
+After reading the official exercise description, we developed individual SQL files named **`Q01.sql`** through **`Q15.sql`**.  
+Each file contains a query that answers the corresponding question in the assignment.
+
+To support these queries efficiently, we updated **`festival_marina.sql`** by adding relevant **indexes** on key attributes, optimizing performance across join conditions and filtering clauses.
+
+Besides the main SQL queries (`Q01–Q15`), we also included:
+
+- **`Q04_2.sql`** and **`Q06_2.sql`**: Alternative implementations for questions 4 and 6, as requested in the assignment.
+- **`new_data.py`**: A Python script that inserts additional tuples to ensure our queries do not return empty sets. This script creates enriched data cases for edge query testing.
+
+Using this enhanced data, we generated a **new backup** of the database.
+
+---
+
+## 📊 Σχόλια για την Υλοποίηση
 
 Υλοποιήσαμε τους παρακάτω πίνακες (σε παρένθεση ο αριθμός των dummy δεδομένων που δημιουργήθηκαν από το `data_creator2304.py`):
 
 **18 TABLES:**
 
-- `artist` (50 tuples)  
-- `building` (30 tuples)  
-- `buyer` (10 tuples) <<<<<  
-- `events` (161 tuples)  
-- `festival` (10 tuples)  
-- `festival_location` (10 tuples)  
-- `group` (15 tuples) *(escaped because `group` is a reserved keyword)*  
-- `group_members` (48 tuples)  
-- `performances` (231 tuples)  
-- `personel` (10 tuples)  
-- `resale_queue` (8 tuples) <<<<<  
-- `review` (171 tuples)  
-- `role_of_personel_on_event` (470 tuples)  
-- `seller` (10 tuples) <<<<<<<<<<  
-- `temp_resale_matches` (2 tuples) <<<<<<<  
-- `ticket` (220 tuples)  
-- `visitor` (10 tuples)  
-- `gerne` ( tuples) <<<<
+- `artist`  
+- `building`  
+- `buyer`   
+- `events`  
+- `festival`   
+- `festival_location`   
+- `group`  *(escaped because `group` is a reserved keyword)*  
+- `group_members`  
+- `performances`  
+- `personel` 
+- `resale_queue`   
+- `review` 
+- `role_of_personel_on_event`  
+- `seller`  
+- `temp_resale_matches`  
+- `ticket`   
+- `visitor`   
+- `gerne` 
 
 ---
 
-## 📌 ΠΑΡΑΔΟΧΕΣ (Based on ER Diagram)
+## 📌 Παραδοχές (Based on ER Diagram)
 
 - Κάθε επισκέπτης μπορεί να αγοράσει **μόνο ένα εισιτήριο** για **μια συγκεκριμένη παράσταση και ημέρα**.
 - Μπορεί όμως να αγοράσει **πολλά εισιτήρια συνολικά**, εφόσον κάθε ένα αντιστοιχεί σε **διαφορετική παράσταση ή/και ημέρα** του φεστιβάλ.

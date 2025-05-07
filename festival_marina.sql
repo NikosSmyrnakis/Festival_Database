@@ -67,6 +67,9 @@ CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
     group_website VARCHAR(255),     -- can be NULL
     group_instagram VARCHAR(255),   -- can be NULL
     member_names TEXT DEFAULT ''
+    um_of_consecutive_years_participating INT DEFAULT 0,
+    CHECK (0 <= num_of_consecutive_years_participating AND num_of_consecutive_years_participating <= 3) -- number of years the artist has participated in the festival
+
     );    
 
 CREATE TABLE genre (
@@ -108,8 +111,11 @@ CREATE TABLE events (
     ) STORED,
     FOREIGN KEY (building_ID) REFERENCES building(building_ID),
     FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID) -- ,
-    -- CHECK (event_start_time < event_end_time)
-);
+    is_soldout BOOLEAN DEFAULT FALSE,
+    VIP_total INT, 
+    backstage_total INT,
+    general_total INT
+    );
 
 -- Performances
 -- Each performance belongs to an event and has a type and duration
@@ -139,34 +145,11 @@ CREATE TABLE performances (
 CREATE TABLE role_of_personel_on_event (
     personel_ID INT,
     event_ID INT,
-    role ENUM('techincal','security','support') NOT NULL,
+    role ENUM('technical','security','support') NOT NULL,
     PRIMARY KEY (personel_ID, event_ID),
     FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID),
     FOREIGN KEY (event_ID) REFERENCES events(event_ID)
 );
-
--- Artist-Performance Relationship (many-to-many)
--- Connects artists to their performances
-
-
-/*
-CREATE TABLE artist_performances (
-    artist_ID INT,
-    performance_ID INT,
-    PRIMARY KEY (artist_ID, performance_ID),
-    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID),
-    FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
-);
-
-CREATE TABLE group_performances (
-    group_ID INT,
-    performance_ID INT,
-    PRIMARY KEY (group_ID, performance_ID),
-    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
-    FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
-);
-*/
-
 
 -- Visitor
 -- Stores personal data for individuals attending events
@@ -232,16 +215,21 @@ CREATE TABLE seller (
 -- Feedback for events by visitors who have activated tickets
 -- (Use a trigger to ensure review is only allowed if ticket is activated)
 CREATE TABLE review (
-    review_ID INT AUTO_INCREMENT PRIMARY KEY,
-    ticket_ID INT,
-    artist_performance ENUM('1', '2', '3', '4', '5'),
-    sound_and_lighting ENUM('1', '2', '3', '4', '5'),
-    stage_presence ENUM('1', '2', '3', '4', '5'),
-    event_organization ENUM('1', '2', '3', '4', '5'),
-    overall_impression ENUM('1', '2', '3', '4', '5'),
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
-    -- NOTE: use trigger to ensure review only if activated_status = TRUE
+   review_ID INT AUTO_INCREMENT PRIMARY KEY,
+   ticket_ID INT NOT NULL,
+   performance_ID INT NOT NULL,
+
+   artist_performance ENUM('1', '2', '3', '4', '5'),
+   sound_and_lighting ENUM('1', '2', '3', '4', '5'),
+   stage_presence ENUM('1', '2', '3', '4', '5'),
+   event_organization ENUM('1', '2', '3', '4', '5'),
+   overall_impression ENUM('1', '2', '3', '4', '5'),
+
+   FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID),
+   FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
 );
+
+
 
 -- Temporary Table for Resale Matches
 CREATE TABLE temp_resale_matches (
@@ -255,8 +243,8 @@ CREATE TABLE temp_resale_matches (
 );
 
 
--- =========================================
--- INDEXES
+-- === INDEXES === ---
+
 CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID);
 CREATE INDEX idx_artist_name ON artist(artist_name);
 CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID);
@@ -302,6 +290,185 @@ DELIMITER ;
 
 
 --- Visitor Triggers --- 
+--- Artist Trigger 1 ---
+DELIMITER $$
+
+CREATE TRIGGER limit_participant_consecutive_years
+AFTER INSERT ON performances
+FOR EACH ROW
+BEGIN
+   DECLARE festival_year INT;
+   DECLARE is_artist BOOL DEFAULT FALSE;
+   DECLARE is_group BOOL DEFAULT FALSE;
+   DECLARE participant_id INT;
+   DECLARE consec_years INT DEFAULT 1;
+   DECLARE prev_year INT;
+
+   -- Get festival year from inserted performance
+   SELECT YEAR(f.starting_date) INTO festival_year
+   FROM events e
+   JOIN festival f ON e.festival_ID = f.festival_ID
+   WHERE e.event_ID = NEW.event_ID;
+
+   -- Determine if it's artist or group
+   IF NEW.artist_ID IS NOT NULL THEN
+       SET is_artist = TRUE;
+       SET participant_id = NEW.artist_ID;
+   ELSEIF NEW.group_ID IS NOT NULL THEN
+       SET is_group = TRUE;
+       SET participant_id = NEW.group_ID;
+   ELSE
+       -- No artist or group provided
+       LEAVE limit_participant_consecutive_years;
+   END IF;
+
+   -- Create temporary table to collect participation years
+   CREATE TEMPORARY TABLE IF NOT EXISTS tmp_years (
+       year_part INT
+   );
+
+   -- Insert previous years of participation (excluding current)
+   IF is_artist THEN
+       INSERT INTO tmp_years (year_part)
+       SELECT DISTINCT YEAR(f.starting_date)
+       FROM performances p
+       JOIN events e ON p.event_ID = e.event_ID
+       JOIN festival f ON e.festival_ID = f.festival_ID
+       WHERE p.artist_ID = participant_id
+         AND YEAR(f.starting_date) <> festival_year;
+   ELSEIF is_group THEN
+       INSERT INTO tmp_years (year_part)
+       SELECT DISTINCT YEAR(f.starting_date)
+       FROM performances p
+       JOIN events e ON p.event_ID = e.event_ID
+       JOIN festival f ON e.festival_ID = f.festival_ID
+       WHERE p.group_ID = participant_id
+         AND YEAR(f.starting_date) <> festival_year;
+   END IF;
+
+   -- Add current year
+   INSERT INTO tmp_years (year_part) VALUES (festival_year);
+
+   -- Walk through years and count consecutive ones
+   DECLARE done INT DEFAULT FALSE;
+   DECLARE y INT;
+   DECLARE curr_consec INT DEFAULT 1;
+   DECLARE cur CURSOR FOR SELECT year_part FROM tmp_years ORDER BY year_part;
+   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+   OPEN cur;
+   SET prev_year = NULL;
+
+   read_loop: LOOP
+       FETCH cur INTO y;
+       IF done THEN
+           LEAVE read_loop;
+       END IF;
+
+       IF prev_year IS NOT NULL THEN
+           IF y = prev_year + 1 THEN
+               SET curr_consec = curr_consec + 1;
+           ELSE
+               SET curr_consec = 1;
+           END IF;
+       END IF;
+
+       SET prev_year = y;
+
+       IF curr_consec > 3 THEN
+           SIGNAL SQLSTATE '45000'
+           SET MESSAGE_TEXT = 'Participants cannot perform more than 3 consecutive years.';
+       END IF;
+   END LOOP;
+   CLOSE cur;
+
+   SET consec_years = curr_consec;
+
+   -- Update correct table
+   IF is_artist THEN
+       UPDATE artist
+       SET num_of_consecutive_years_participating = consec_years
+       WHERE artist_ID = participant_id;
+   ELSEIF is_group THEN
+       UPDATE `group`
+       SET num_of_consecutive_years_participating = consec_years
+       WHERE group_ID = participant_id;
+   END IF;
+
+   DROP TEMPORARY TABLE IF EXISTS tmp_years;
+
+END $$
+
+DELIMITER ;
+
+--- Ticket Trigger 1 ---
+--- Check if the ticket can be sold based on the event's capacity and ticket type limits
+DELIMITER $$
+
+CREATE TRIGGER check_ticket_availability
+BEFORE INSERT ON ticket
+FOR EACH ROW
+BEGIN
+    DECLARE sold_total INT;
+    DECLARE sold_vip INT;
+    DECLARE sold_backstage INT;
+    DECLARE sold_general INT;
+    DECLARE vip_limit INT;
+    DECLARE backstage_limit INT;
+    DECLARE general_limit INT;
+    DECLARE max_capacity INT;
+
+    -- Συνολικά εισιτήρια για το event
+    SELECT COUNT(*) INTO sold_total
+    FROM ticket
+    WHE event_ID = NEW.event_ID;
+
+    -- Πλήθος πωλημένων εισιτηρίων ανά τύπο
+    SELECT 
+        SUM(ticket_type = 'VIP'),
+        SUM(ticket_type = 'backstage'),
+        SUM(ticket_type = 'general_admission')
+    INTO sold_vip, sold_backstage, sold_general
+    FROM ticket
+    WHERE event_ID = NEW.event_ID;
+
+    -- Πάρε τα όρια του event
+    SELECT 
+        VIP_total, backstage_total, general_total
+    INTO 
+        vip_limit, backstage_limit, general_limit
+    FROM events
+    WHERE event_ID = NEW.event_ID;
+
+    -- Πάρε τη χωρητικότητα του κτηρίου
+    SELECT b.max_capacity INTO max_capacity
+    FROM events e
+    JOIN building b ON e.building_ID = b.building_ID
+    WHERE e.event_ID = NEW.event_ID;
+
+    -- Έλεγχος 1: Μην υπερβεί το building capacity
+    IF sold_total >= max_capacity THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No more tickets can be sold: building capacity reached.';
+    END IF;
+
+    -- Έλεγχος 2: Ανάλογα με το είδος του εισιτηρίου
+    IF NEW.ticket_type = 'VIP' AND sold_vip >= vip_limit THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No more VIP tickets available for this event.';
+    ELSEIF NEW.ticket_type = 'backstage' AND sold_backstage >= backstage_limit THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No more Backstage tickets available for this event.';
+    ELSEIF NEW.ticket_type = 'general_admission' AND sold_general >= general_limit THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No more General Admission tickets available for this event.';
+    END IF;
+END $$
+
+DELIMITER ;
+
+
+
 
 --- Visitor Trigger 1 --- 
 -- When a new visitor is created, create a corresponding buyer entry
@@ -409,6 +576,24 @@ END$$
 
 DELIMITER ;
 
+--- Genre Trigger 1 ---
+DELIMITER $$
+
+CREATE TRIGGER check_genre_entity_exclusivity
+BEFORE INSERT ON genre
+FOR EACH ROW
+BEGIN
+    IF (NEW.artist_ID IS NOT NULL AND NEW.group_ID IS NOT NULL) OR
+       (NEW.artist_ID IS NULL AND NEW.group_ID IS NULL) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Each genre must be linked to either one artist OR one group (not both or neither).';
+    END IF;
+END $$
+
+DELIMITER ;
+
+
+
 ---Performance Triggers---
 --- Performance Trigger 1 ---
 -- Check for overlapping events in the same building on the same day
@@ -439,6 +624,161 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+--- Performance Trigger 2 ---
+DELIMITER $$
+
+CREATE TRIGGER check_review_validity
+BEFORE INSERT ON review
+FOR EACH ROW
+BEGIN
+    DECLARE ticket_event INT;
+    DECLARE performance_event INT;
+    DECLARE is_activated BOOLEAN;
+
+    -- Πάρε το event στο οποίο ανήκει το εισιτήριο και αν είναι ενεργοποιημένο
+    SELECT event_ID, activated_status INTO ticket_event, is_activated
+    FROM ticket
+    WHERE ticket_ID = NEW.ticket_ID;
+
+    -- Πάρε το event στο οποίο ανήκει το performance
+    SELECT event_ID INTO performance_event
+    FROM performances
+    WHERE performance_ID = NEW.performance_ID;
+
+    -- Έλεγχος 1: Το εισιτήριο πρέπει να είναι ενεργοποιημένο
+    IF is_activated = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'You cannot review a performance unless your ticket is activated.';
+    END IF;
+
+    -- Έλεγχος 2: Το performance πρέπει να ανήκει στο event του εισιτηρίου
+    IF ticket_event <> performance_event THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'The performance you are trying to review does not belong to the event of your ticket.';
+    END IF;
+
+END $$
+
+DELIMITER ;
+
+--- Performance Trigger 3 ---
+--- Check for consecutive years of participation for artists/groups
+
+DELIMITER $$
+
+CREATE TRIGGER limit_participant_consecutive_years
+AFTER INSERT ON performances
+FOR EACH ROW
+BEGIN
+   DECLARE festival_year INT;
+   DECLARE is_artist BOOL DEFAULT FALSE;
+   DECLARE is_group BOOL DEFAULT FALSE;
+   DECLARE participant_id INT;
+   DECLARE consec_years INT DEFAULT 1;
+   DECLARE prev_year INT;
+
+   -- Get festival year from inserted performance
+   SELECT YEAR(f.starting_date) INTO festival_year
+   FROM events e
+   JOIN festival f ON e.festival_ID = f.festival_ID
+   WHERE e.event_ID = NEW.event_ID;
+
+   -- Determine if it's artist or group
+   IF NEW.artist_ID IS NOT NULL THEN
+       SET is_artist = TRUE;
+       SET participant_id = NEW.artist_ID;
+   ELSEIF NEW.group_ID IS NOT NULL THEN
+       SET is_group = TRUE;
+       SET participant_id = NEW.group_ID;
+   ELSE
+       -- No artist or group provided
+       LEAVE limit_participant_consecutive_years;
+   END IF;
+
+   -- Create temporary table to collect participation years
+   CREATE TEMPORARY TABLE IF NOT EXISTS tmp_years (
+       year_part INT
+   );
+
+   -- Insert previous years of participation (excluding current)
+   IF is_artist THEN
+       INSERT INTO tmp_years (year_part)
+       SELECT DISTINCT YEAR(f.starting_date)
+       FROM performances p
+       JOIN events e ON p.event_ID = e.event_ID
+       JOIN festival f ON e.festival_ID = f.festival_ID
+       WHERE p.artist_ID = participant_id
+         AND YEAR(f.starting_date) <> festival_year;
+   ELSEIF is_group THEN
+       INSERT INTO tmp_years (year_part)
+       SELECT DISTINCT YEAR(f.starting_date)
+       FROM performances p
+       JOIN events e ON p.event_ID = e.event_ID
+       JOIN festival f ON e.festival_ID = f.festival_ID
+       WHERE p.group_ID = participant_id
+         AND YEAR(f.starting_date) <> festival_year;
+   END IF;
+
+   -- Add current year
+   INSERT INTO tmp_years (year_part) VALUES (festival_year);
+
+   -- Walk through years and count consecutive ones
+   DECLARE done INT DEFAULT FALSE;
+   DECLARE y INT;
+   DECLARE curr_consec INT DEFAULT 1;
+   DECLARE cur CURSOR FOR SELECT year_part FROM tmp_years ORDER BY year_part;
+   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+   OPEN cur;
+   SET prev_year = NULL;
+
+   read_loop: LOOP
+       FETCH cur INTO y;
+       IF done THEN
+           LEAVE read_loop;
+       END IF;
+
+       IF prev_year IS NOT NULL THEN
+           IF y = prev_year + 1 THEN
+               SET curr_consec = curr_consec + 1;
+           ELSE
+               SET curr_consec = 1;
+           END IF;
+       END IF;
+
+       SET prev_year = y;
+
+       IF curr_consec > 3 THEN
+           SIGNAL SQLSTATE '45000'
+           SET MESSAGE_TEXT = 'Participants cannot perform more than 3 consecutive years.';
+       END IF;
+   END LOOP;
+   CLOSE cur;
+
+   SET consec_years = curr_consec;
+
+   -- Update correct table
+   IF is_artist THEN
+       UPDATE artist
+       SET num_of_consecutive_years_participating = consec_years
+       WHERE artist_ID = participant_id;
+   ELSEIF is_group THEN
+       UPDATE `group`
+       SET num_of_consecutive_years_participating = consec_years
+       WHERE group_ID = participant_id;
+   END IF;
+
+   DROP TEMPORARY TABLE IF EXISTS tmp_years;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
 
 --- Ticket Triggers ---
 --- Ticket Trigger 1 ---
@@ -523,6 +863,7 @@ BEGIN
 END$$
 
 DELIMITER ;
+
 
 
 --- === CONSTRAINTS === ---
