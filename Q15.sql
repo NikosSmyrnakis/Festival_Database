@@ -17,4 +17,6 @@ JOIN artist a ON p.artist_ID = a.artist_ID
 WHERE p.artist_ID IS NOT NULL
 GROUP BY v.visitor_ID, a.artist_ID
 ORDER BY total_score DESC
+
 LIMIT 5;
+
