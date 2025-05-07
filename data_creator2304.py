@@ -618,27 +618,228 @@ for ticket in random.sample(ticket_ids, k=200):
 
 
 # === 17. Reviews ===
-if False:
-    for ticket in ticket_ids:
-        ticket_id = ticket[0]
-        activated_status = ticket[4]  # Στο ticket_ids έχεις και το activated status
+# Για κάθε εισιτήριο, βρες ένα συμβατό performance από το ίδιο event
+# 1. Πάρε όλα τα ενεργά εισιτήρια με το event_ID τους
+cursor.execute("""
+    SELECT ticket_ID, event_ID
+    FROM ticket
+    WHERE activated_status = TRUE
+""")
+active_tickets = cursor.fetchall()
 
-        if activated_status:  # Μόνο αν είναι ενεργό
+# 2. Για κάθε εισιτήριο, βρες όλα τα performance_IDs από το ίδιο event
+for ticket_id, event_id in active_tickets:
+    cursor.execute("""
+        SELECT performance_ID
+        FROM performances
+        WHERE event_ID = %s
+    """, (event_id,))
+    compatible_performances = cursor.fetchall()
+
+    if compatible_performances:  # αν υπάρχουν συμβατά performances
+        performance_id = random.choice(compatible_performances)[0]
+
+        cursor.execute("""
+            INSERT INTO review (
+                ticket_ID, performance_ID,
+                artist_performance, sound_and_lighting,
+                stage_presence, event_organization, overall_impression
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            ticket_id,
+            performance_id,
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5)),
+            str(random.randint(1, 5))
+        ))
+#Query 7 not empty set by marina
+# 1. Εισαγωγή 3 τεχνικών
+technical_people = [
+    ("Alex", "Smith", 30, "alex@example.com", "698000001", "experienced"),
+    ("Maria", "Papadopoulou", 28, "maria@example.com", "698000002", "very_experienced"),
+    ("Nikos", "Kritikos", 33, "nikos@example.com", "698000003", "intermidiate")
+]
+
+personel_ids = []
+for first_name, last_name, age, email, phone, status in technical_people:
+    cursor.execute("""
+        INSERT INTO personel (first_name, last_name, age, email, phone_number, expertise_status)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (first_name, last_name, age, email, phone, status))
+    personel_ids.append(cursor.lastrowid)
+
+# 2. Βρες 3 διαφορετικά event_IDs (ή λιγότερα αν υπάρχουν μόνο λίγα)
+cursor.execute("SELECT event_ID FROM events LIMIT 3")
+event_ids = [row[0] for row in cursor.fetchall()]
+
+# 3. Αντιστοίχισε κάθε personel σε ένα event ως "technical"
+for i in range(min(len(personel_ids), len(event_ids))):
+    cursor.execute("""
+        INSERT INTO role_of_personel_on_event (personel_ID, event_ID, role)
+        VALUES (%s, %s, 'technical')
+    """, (personel_ids[i], event_ids[i]))
+
+# More data for odd querries by marina
+# === Καλλιτέχνες ===
+artist_data = [
+    ("Adele Adkins", "Adele", "1988-05-05"),
+    ("Kendrick Lamar", "K.Dot", "1987-06-17"),
+    ("Ed Sheeran", "Teddy", "1991-02-17")
+]
+
+artist_ids = []
+for name, stage_name, birthdate in artist_data:
+    cursor.execute("""
+        INSERT INTO artist (artist_name, stage_name, artist_date_of_birth, artist_website, artist_instagram, artist_debute)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (
+        name,
+        stage_name,
+        birthdate,
+        f"https://{stage_name.lower()}.com",
+        f"https://instagram.com/{stage_name.lower()}",
+        '2010-01-01'
+    ))
+    artist_ids.append(cursor.lastrowid)
+
+# === Δημιουργία 10 φεστιβάλ σε διαφορετικές ηπείρους ===
+continents = [
+    ("Europe", "Berlin", "Germany"),
+    ("Asia", "Tokyo", "Japan"),
+    ("America", "New York", "USA"),
+    ("Africa", "Cape Town", "South Africa"),
+    ("Oceania", "Sydney", "Australia"),
+    ("Antarctica", "McMurdo", "Antarctica"),
+    ("South America", "São Paulo", "Brazil"),
+    ("Australia", "Melbourne", "Australia"),
+    ("North America", "Toronto", "Canada"),
+    ("Middle East", "Dubai", "UAE")
+]
+
+festival_ids = []
+for i in range(10):
+    city = continents[i][1]
+    country = continents[i][2]
+    continent = continents[i][0]
+
+    cursor.execute("INSERT INTO festival (starting_date, duration) VALUES (%s, %s)", 
+                   (datetime(2020+i, 7, 10).date(), 3))
+    fid = cursor.lastrowid
+    festival_ids.append(fid)
+
+    cursor.execute("""
+        INSERT INTO festival_location (festival_ID, address, town, country, continent, geo_coordinates)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (
+        fid,
+        f"{i+10} Main St",
+        city,
+        country,
+        continent,
+        f"{-33.0 + i},{151.0 + i}"  # fake geo coords
+    ))
+
+# === Κτίριο ===
+cursor.execute("""
+    INSERT INTO building (building_name, building_description, max_capacity, technical_equipment)
+    VALUES ('Global Stage', 'Multi-purpose performance venue', 500, 'sound,lighting,video')
+""")
+building_id = cursor.lastrowid
+
+# === Αντιστοιχίσεις ===
+artist_festival_map = {
+    artist_ids[0]: [festival_ids[0]],                      # Adele - 1 φεστιβάλ
+    artist_ids[1]: [festival_ids[1], festival_ids[2]],     # Kendrick - 2 φεστιβάλ
+    artist_ids[2]: festival_ids                            # Ed - 10 φεστιβάλ
+}
+
+# === Events & Performances ===
+for artist_id, fids in artist_festival_map.items():
+    for fid in fids:
+        event_start = datetime(2025, 8, 1, 18, 0, 0)
+        event_end = event_start + timedelta(hours=3)
+        cursor.execute("""
+            INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            fid,
+            f"Live Session {fid}",
+            1,
+            event_start,
+            event_end,
+            building_id
+        ))
+        event_id = cursor.lastrowid
+
+        # 3 warm-up performances
+        for i in range(3):
+            start = event_start + timedelta(minutes=i * 30)
+            end = start + timedelta(minutes=25)
             cursor.execute("""
-                INSERT INTO review (ticket_ID, artist_performance, sound_and_lighting, stage_presence, event_organization, overall_impression)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO performances (event_ID, performance_type, performance_start_time, performance_end_time, 
+                                          building_ID, building_name, artist_ID)
+                VALUES (%s, 'warm up', %s, %s, %s, %s, %s)
             """, (
-                ticket_id,
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5)),
-                str(random.randint(1, 5))
+                event_id,
+                start,
+                end,
+                building_id,
+                'Global Stage',
+                artist_id
             ))
+# === Καλλιτέχνης με 8 συμμετοχές (για να πιάσει το -5 από Ed που έχει 10) ===
+cursor.execute("""
+    INSERT INTO artist (artist_name, stage_name, artist_date_of_birth, artist_website, artist_instagram, artist_debute)
+    VALUES (%s, %s, %s, %s, %s, %s)
+""", (
+    "Tina Turner",
+    "Tina",
+    "1970-11-26",
+    "https://tina.com",
+    "https://instagram.com/tina",
+    '1990-01-01'
+))
+tina_id = cursor.lastrowid
+
+# Δώσε της 8 συμμετοχές σε ξεχωριστά φεστιβάλ
+for fid in festival_ids[:8]:  # <= 8 φεστιβάλ
+    event_start = datetime(2025, 9, 1, 19, 0, 0)
+    event_end = event_start + timedelta(hours=2)
+    cursor.execute("""
+        INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (
+        fid,
+        f"Tina Live {fid}",
+        1,
+        event_start,
+        event_end,
+        building_id
+    ))
+    event_id = cursor.lastrowid
+
+    # 1 performance τύπου warm up
+    cursor.execute("""
+        INSERT INTO performances (event_ID, performance_type, performance_start_time, performance_end_time, 
+                                  building_ID, building_name, artist_ID)
+        VALUES (%s, 'warm up', %s, %s, %s, %s, %s)
+    """, (
+        event_id,
+        event_start,
+        event_start + timedelta(minutes=40),
+        building_id,
+        'Global Stage',
+        tina_id
+    ))
 
 
+# 4. Commit για να αποθηκευτούν οι αλλαγές
+conn.commit()
 
-
+# Commit & close
 conn.commit()
 cursor.close()
 conn.close()
