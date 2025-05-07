@@ -655,6 +655,35 @@ for ticket_id, event_id in active_tickets:
             str(random.randint(1, 5)),
             str(random.randint(1, 5))
         ))
+#Query 7 not empty set by marina
+# 1. Εισαγωγή 3 τεχνικών
+technical_people = [
+    ("Alex", "Smith", 30, "alex@example.com", "698000001", "experienced"),
+    ("Maria", "Papadopoulou", 28, "maria@example.com", "698000002", "very_experienced"),
+    ("Nikos", "Kritikos", 33, "nikos@example.com", "698000003", "intermidiate")
+]
+
+personel_ids = []
+for first_name, last_name, age, email, phone, status in technical_people:
+    cursor.execute("""
+        INSERT INTO personel (first_name, last_name, age, email, phone_number, expertise_status)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (first_name, last_name, age, email, phone, status))
+    personel_ids.append(cursor.lastrowid)
+
+# 2. Βρες 3 διαφορετικά event_IDs (ή λιγότερα αν υπάρχουν μόνο λίγα)
+cursor.execute("SELECT event_ID FROM events LIMIT 3")
+event_ids = [row[0] for row in cursor.fetchall()]
+
+# 3. Αντιστοίχισε κάθε personel σε ένα event ως "technical"
+for i in range(min(len(personel_ids), len(event_ids))):
+    cursor.execute("""
+        INSERT INTO role_of_personel_on_event (personel_ID, event_ID, role)
+        VALUES (%s, %s, 'technical')
+    """, (personel_ids[i], event_ids[i]))
+
+# 4. Commit για να αποθηκευτούν οι αλλαγές
+conn.commit()
 
 # Commit & close
 conn.commit()
