@@ -122,4 +122,6 @@ for artist_id, fids in artist_festival_map.items():
 conn.commit()
 cursor.close()
 conn.close()
+
 print("✅ Realistic test data created with max participation count = 10.")
+
