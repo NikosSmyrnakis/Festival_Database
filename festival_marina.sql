@@ -291,7 +291,7 @@ DELIMITER ;
 
 --- Visitor Triggers --- 
 --- Artist Trigger 1 ---
-/*
+
 DELIMITER $$
 
 CREATE TRIGGER limit_participant_consecutive_years
@@ -401,7 +401,7 @@ BEGIN
 END $$
 
 DELIMITER ;
-*/
+
 --- Ticket Trigger 1 ---
 --- Check if the ticket can be sold based on the event's capacity and ticket type limits
 
