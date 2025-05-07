@@ -404,28 +404,28 @@ DELIMITER ;
 */
 --- Ticket Trigger 1 ---
 --- Check if the ticket can be sold based on the event's capacity and ticket type limits
-/*
+
 DELIMITER $$
 
 CREATE TRIGGER check_ticket_availability
 BEFORE INSERT ON ticket
 FOR EACH ROW
 BEGIN
-    DECLARE sold_total INT;
-    DECLARE sold_vip INT;
-    DECLARE sold_backstage INT;
-    DECLARE sold_general INT;
-    DECLARE vip_limit INT;
-    DECLARE backstage_limit INT;
-    DECLARE general_limit INT;
-    DECLARE max_capacity INT;
+    DECLARE sold_total INT DEFAULT 0;
+    DECLARE sold_vip INT DEFAULT 0;
+    DECLARE sold_backstage INT DEFAULT 0;
+    DECLARE sold_general INT DEFAULT 0;
+    DECLARE vip_limit INT DEFAULT 0;
+    DECLARE backstage_limit INT DEFAULT 0;
+    DECLARE general_limit INT DEFAULT 0;
+    DECLARE max_capacity INT DEFAULT 0;
 
     -- Συνολικά εισιτήρια για το event
     SELECT COUNT(*) INTO sold_total
     FROM ticket
-    WHE event_ID = NEW.event_ID;
+    WHERE event_ID = NEW.event_ID;
 
-    -- Πλήθος πωλημένων εισιτηρίων ανά τύπο
+    -- Πωλημένα ανά τύπο
     SELECT 
         SUM(ticket_type = 'VIP'),
         SUM(ticket_type = 'backstage'),
@@ -434,41 +434,41 @@ BEGIN
     FROM ticket
     WHERE event_ID = NEW.event_ID;
 
-    -- Πάρε τα όρια του event
-    SELECT 
-        VIP_total, backstage_total, general_total
-    INTO 
-        vip_limit, backstage_limit, general_limit
+    -- Όρια εισιτηρίων για το event
+    SELECT VIP_total, backstage_total, general_total
+    INTO vip_limit, backstage_limit, general_limit
     FROM events
     WHERE event_ID = NEW.event_ID;
 
-    -- Πάρε τη χωρητικότητα του κτηρίου
-    SELECT b.max_capacity INTO max_capacity
+    -- Χωρητικότητα του κτιρίου για το event
+    SELECT b.max_capacity
+    INTO max_capacity
     FROM events e
     JOIN building b ON e.building_ID = b.building_ID
     WHERE e.event_ID = NEW.event_ID;
 
-    -- Έλεγχος 1: Μην υπερβεί το building capacity
+    -- Έλεγχος χωρητικότητας
     IF sold_total >= max_capacity THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No more tickets can be sold: building capacity reached.';
+        SET MESSAGE_TEXT = 'Cannot sell ticket: event has reached maximum building capacity.';
     END IF;
 
-    -- Έλεγχος 2: Ανάλογα με το είδος του εισιτηρίου
+    -- Έλεγχος διαθεσιμότητας ανά τύπο
     IF NEW.ticket_type = 'VIP' AND sold_vip >= vip_limit THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No more VIP tickets available for this event.';
+        SET MESSAGE_TEXT = 'Cannot sell VIP ticket: limit reached.';
     ELSEIF NEW.ticket_type = 'backstage' AND sold_backstage >= backstage_limit THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No more Backstage tickets available for this event.';
+        SET MESSAGE_TEXT = 'Cannot sell Backstage ticket: limit reached.';
     ELSEIF NEW.ticket_type = 'general_admission' AND sold_general >= general_limit THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No more General Admission tickets available for this event.';
+        SET MESSAGE_TEXT = 'Cannot sell General Admission ticket: limit reached.';
     END IF;
 END $$
 
 DELIMITER ;
-*/
+
+
 
 
 

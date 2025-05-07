@@ -20,3 +20,4 @@ ORDER BY total_score DESC
 
 LIMIT 5;
 
+-- ok
