@@ -66,8 +66,8 @@ CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
     group_debute DATE NOT NULL,
     group_website VARCHAR(255),     -- can be NULL
     group_instagram VARCHAR(255),   -- can be NULL
-    member_names TEXT DEFAULT ''
-    um_of_consecutive_years_participating INT DEFAULT 0,
+    member_names TEXT DEFAULT '',
+    num_of_consecutive_years_participating INT DEFAULT 0,
     CHECK (0 <= num_of_consecutive_years_participating AND num_of_consecutive_years_participating <= 3) -- number of years the artist has participated in the festival
 
     );    
@@ -110,7 +110,7 @@ CREATE TABLE events (
         END     
     ) STORED,
     FOREIGN KEY (building_ID) REFERENCES building(building_ID),
-    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID) -- ,
+    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID), -- ,
     is_soldout BOOLEAN DEFAULT FALSE,
     VIP_total INT, 
     backstage_total INT,
@@ -291,6 +291,7 @@ DELIMITER ;
 
 --- Visitor Triggers --- 
 --- Artist Trigger 1 ---
+/*
 DELIMITER $$
 
 CREATE TRIGGER limit_participant_consecutive_years
@@ -400,9 +401,10 @@ BEGIN
 END $$
 
 DELIMITER ;
-
+*/
 --- Ticket Trigger 1 ---
 --- Check if the ticket can be sold based on the event's capacity and ticket type limits
+/*
 DELIMITER $$
 
 CREATE TRIGGER check_ticket_availability
@@ -466,7 +468,7 @@ BEGIN
 END $$
 
 DELIMITER ;
-
+*/
 
 
 
@@ -664,7 +666,7 @@ DELIMITER ;
 
 --- Performance Trigger 3 ---
 --- Check for consecutive years of participation for artists/groups
-
+/*
 DELIMITER $$
 
 CREATE TRIGGER limit_participant_consecutive_years
@@ -774,7 +776,7 @@ BEGIN
 END $$
 
 DELIMITER ;
-
+*/
 
 
 
