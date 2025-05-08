@@ -715,7 +715,7 @@ BEGIN
 END$$
 
 DELIMITER ;
-
+/*
 --- Performance Trigger 6 ---
 --- Check for overlapping performances for the same artist or group
 DELIMITER $$
@@ -745,6 +745,37 @@ END$$
 
 DELIMITER ;
 
+--- Performance Trigger 7 ---
+--- Check for overlapping performances for the same artist or group on update
+DELIMITER $$
+
+CREATE TRIGGER prevent_artist_group_overlap_update
+BEFORE UPDATE ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE overlap_count INT;
+
+    SELECT COUNT(*) INTO overlap_count
+    FROM performances p
+    WHERE p.performance_ID != NEW.performance_ID
+      AND (
+              (NEW.artist_ID IS NOT NULL AND p.artist_ID = NEW.artist_ID)
+           OR (NEW.group_ID IS NOT NULL AND p.group_ID = NEW.group_ID)
+          )
+      AND (
+           p.performance_start_time < NEW.performance_end_time AND
+           p.performance_end_time > NEW.performance_start_time
+      );
+
+    IF overlap_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Artist or group has an overlapping performance (on update).';
+    END IF;
+END$$
+
+DELIMITER ;
+
+*/
 
 
 
@@ -854,7 +885,7 @@ IF is_active = FALSE THEN
 END$$
 
 DELIMITER ;
-/*
+
 --- role_of_personel_on_event Triggers ---
 --- Role Trigger 1 ---
 -- Ensure that the same personel cannot have multiple roles in the same event
@@ -881,7 +912,7 @@ BEGIN
     END IF;
 END $$
 
-DELIMITER ;*/
+DELIMITER ;
 
 
 
