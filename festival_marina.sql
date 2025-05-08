@@ -718,7 +718,7 @@ BEGIN
 END$$
 
 DELIMITER ;
-/*
+
 --- Performance Trigger 6 ---
 --- Check for overlapping performances for the same artist or group
 DELIMITER $$
@@ -778,7 +778,7 @@ END$$
 
 DELIMITER ;
 
-*/
+
 
 
 
