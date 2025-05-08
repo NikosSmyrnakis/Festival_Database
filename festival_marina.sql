@@ -480,6 +480,63 @@ BEGIN
 END$$
 DELIMITER ;
 
+--- Resale Trigger 2 ---
+--- Prevent resale of tickets after the event has started
+DELIMITER $$
+
+CREATE TRIGGER prevent_resale_after_event_start
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE event_time DATETIME;
+
+    -- Ελέγχει αν πρόκειται για πωλητή και έχει δοθεί ticket_ID
+    IF NEW.seller_ID IS NOT NULL AND NEW.ticket_ID IS NOT NULL THEN
+
+        -- Παίρνουμε την ώρα έναρξης του event στο οποίο ανήκει το εισιτήριο
+        SELECT e.event_start_time INTO event_time
+        FROM ticket t
+        JOIN events e ON t.event_ID = e.event_ID
+        WHERE t.ticket_ID = NEW.ticket_ID;
+
+        -- Αν το event έχει ήδη ξεκινήσει, μπλοκάρουμε την εισαγωγή
+        IF NOW() >= event_time THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Cannot resell ticket: event has already started.';
+        END IF;
+
+    END IF;
+END$$
+
+DELIMITER ;
+
+--- Resale Trigger 3 ---
+--- Prevent resale of tickets after the event has started (on update)
+DELIMITER $$
+
+CREATE TRIGGER trg_prevent_activated_ticket_resale
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE is_activated BOOLEAN;
+
+    -- Αν είναι seller που εισάγεται και έχει ticket_ID
+    IF NEW.seller_ID IS NOT NULL AND NEW.ticket_ID IS NOT NULL THEN
+        -- Πάρε το activated_status του εισιτηρίου
+        SELECT activated_status INTO is_activated
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+
+        -- Αν είναι ήδη ενεργοποιημένο, μπλόκαρε την εισαγωγή
+        IF is_activated = TRUE THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Cannot resell ticket: it has already been activated.';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
 --- Event Triggers ---
 --- Event Trigger 1 ---
 -- Ensure that the festival_day is within the festival duration
@@ -1006,6 +1063,8 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+
 
 
 
