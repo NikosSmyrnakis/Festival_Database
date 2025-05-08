@@ -17,5 +17,3 @@ ORDER BY
     festival_participations DESC
 LIMIT
     5;
-
--- ok
