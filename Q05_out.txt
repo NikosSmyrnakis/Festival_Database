@@ -1,0 +1,6 @@
+artist_ID	artist_name	age	festival_participations
+30	Nicholas Lindsey	23	3
+15	Katie Lewis	28	3
+38	Mr. Jeffrey Copeland	21	2
+42	Emily Stanley	26	2
+2	Chelsea Hunter	25	2

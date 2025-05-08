@@ -284,7 +284,7 @@ for eid in event_ids:
         if (pid, eid) not in personel_event_roles:
             role = random.choice(roles)
             cursor.execute("""
-                INSERT INTO role_of_personel_on_event (personel_ID, event_ID, role)
+                INSERT IGNORE INTO role_of_personel_on_event (personel_ID, event_ID, role)
                 VALUES (%s, %s, %s)
             """, (pid, eid, role))
             personel_event_roles.add((pid, eid))
@@ -382,12 +382,15 @@ for pid in performance_ids:
             violation = is_violation_of_3_consecutive_years(years, festival_year)
 
             if not conflict and not violation:
-                cursor.execute("""
-                        UPDATE performances
-                        SET artist_ID = %s
-                        WHERE performance_ID = %s
-                    """, (aid, pid))
-                break
+                try:
+                    cursor.execute("""
+                            UPDATE performances
+                            SET artist_ID = %s
+                            WHERE performance_ID = %s
+                        """, (aid, pid))
+                    break
+                except:
+                    pass
         
         else:
             # Randomly select a group ID
@@ -421,12 +424,15 @@ for pid in performance_ids:
 
 
             if not conflict and not violation:
-                cursor.execute("""
-                        UPDATE performances
-                        SET group_ID = %s
-                        WHERE performance_ID = %s
-                    """, (gid, pid))
-                break
+                try:
+                    cursor.execute("""
+                            UPDATE performances
+                            SET group_ID = %s
+                            WHERE performance_ID = %s
+                        """, (gid, pid))
+                    break
+                except:
+                    pass
 
 # === group_members ===
 group_members_ids = []
@@ -478,6 +484,14 @@ def random_ticket_date(event_id):
         return date_before, activate_status
 
 # === 12. Tickets ===
+def calculate_ean13(ticket_id: int) -> str:
+    base_code = str(ticket_id).zfill(12)
+    sum_even = sum(int(base_code[i]) for i in range(1, 12, 2))
+    sum_odd = sum(int(base_code[i]) for i in range(0, 12, 2))
+    total_sum = sum_odd + (sum_even * 3)
+    check_digit = (10 - (total_sum % 10)) % 10
+    return base_code + str(check_digit)
+
 ticket_ids = []
 ticket_types = ['general_admission', 'VIP', 'backstage']
 payment_methods = ['debit_card', 'credit_card', 'I-BAN']
@@ -524,9 +538,12 @@ for _ in range(220):
         purchase_date,
         round(random.uniform(20.0, 100.0), 2),
         random.choice(payment_methods),
-        activated_ticket
+        activated_ticket,
     ))
     ticket_ids.append([cursor.lastrowid, event_id, visitor_id, ticket_type, activated_ticket])
+    barcode = calculate_ean13(ticket_ids[-1][0])
+
+    cursor.execute("UPDATE ticket SET barcode = %s WHERE ticket_ID = %s", (barcode, ticket_ids[-1][0]))
 
 
 
@@ -658,6 +675,8 @@ for ticket_id, event_id in active_tickets:
             str(random.randint(1, 5)),
             str(random.randint(1, 5))
         ))
+#Query 7 not empty set by marina
+
 # 4. Commit για να αποθηκευτούν οι αλλαγές
 conn.commit()
 

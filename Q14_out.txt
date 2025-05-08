@@ -1,0 +1,5 @@
+genre_name	year1	year2	appearances
+Classical	2017	2018	4
+Jazz	2024	2025	3
+Pop	2017	2018	5
+Rock	2019	2020	4

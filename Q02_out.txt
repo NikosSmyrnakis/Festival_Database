@@ -1,0 +1,24 @@
+artist_ID	artist_name	genre_name	has_participated
+29	Aaron Hawkins	Rock	no
+40	Brenda Sanchez	Rock	no
+17	Briana Pruitt	Rock	no
+21	Carmen Rowe	Rock	no
+33	Charles Armstrong	Rock	no
+39	Christina Henry	Rock	no
+9	Daniel Kramer	Rock	no
+42	Emily Stanley	Rock	no
+31	Ernest Jones	Rock	no
+34	Glenn Cabrera	Rock	no
+14	John Wallace	Rock	no
+7	Katelyn Morris	Rock	no
+1	Kurt Arnold	Rock	no
+4	Marcus Mullins	Rock	no
+24	Matthew Smith	Rock	no
+27	Melissa Bernard	Rock	no
+44	Mr. Billy Brown	Rock	no
+38	Mr. Jeffrey Copeland	Rock	no
+22	Mrs. Laura Lee	Rock	yes
+48	Natalie Miller	Rock	no
+23	Nicole Hartman	Rock	no
+3	Ronald Weiss	Rock	no
+11	Theresa Hernandez	Rock	no

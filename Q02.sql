@@ -1,23 +1,19 @@
-SELECT
-  a.artist_ID,
-  a.artist_name,
-  a.artist_genre,
-  CASE
-    WHEN p.performance_ID IS NOT NULL THEN 'Yes'
-    ELSE 'No'
-  END AS participated_in_year
-FROM
-  artist a
-  LEFT JOIN performances p ON a.artist_ID = p.artist_ID
-  LEFT JOIN events e ON p.event_ID = e.event_ID
-  LEFT JOIN festival f ON e.festival_ID = f.festival_ID
-WHERE
-  a.artist_genre = 'Rock'
-  AND (
-    f.starting_date IS NULL
-    OR YEAR (f.starting_date) = 2024
-  )
-GROUP BY
-  a.artist_ID;
-
--- NOT ok
+SELECT 
+    a.artist_ID,
+    a.artist_name,
+    g.genre_name,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM performances p
+            JOIN events e ON p.event_ID = e.event_ID
+            JOIN festival f ON e.festival_ID = f.festival_ID
+            WHERE p.artist_ID = a.artist_ID
+              AND YEAR(f.starting_date) = 2024
+        )
+        THEN 'yes'
+        ELSE 'no'
+    END AS has_participated
+FROM artist a
+JOIN genre g ON a.artist_ID = g.artist_ID
+WHERE g.genre_name = 'rock';

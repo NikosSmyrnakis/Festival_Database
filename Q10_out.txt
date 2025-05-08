@@ -1,0 +1,4 @@
+genre1	genre2	appearances
+Hip-Hop	Jazz	7
+Classical	Rock	7
+Classical	Pop	6

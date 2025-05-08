@@ -168,7 +168,7 @@ CREATE TABLE ticket (
     ticket_ID INT AUTO_INCREMENT PRIMARY KEY,
     event_ID INT,
     visitor_ID INT NOT NULL,
-
+    barcode CHAR(13),
     FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID),
     FOREIGN KEY (event_ID) REFERENCES events(event_ID),
 
@@ -260,6 +260,9 @@ CREATE INDEX idx_group_members_artist ON group_members(artist_ID);
 CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name);
 
 --- === TRIGGERS === ---
+-- update barcode after inserting a new ticket
+
+
 
 -- Deletion Triggers
 -- Prevent Festival Deletion Trigger
