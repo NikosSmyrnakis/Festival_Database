@@ -559,7 +559,7 @@ BEGIN
 END $$
 
 DELIMITER ;
-/*
+
 --- Performance Trigger 3 ---
 --- Check for consecutive years of participation for artists
 DELIMITER $$
@@ -690,7 +690,7 @@ BEGIN
 END$$
 
 DELIMITER ;
-*/
+
 
 
 
