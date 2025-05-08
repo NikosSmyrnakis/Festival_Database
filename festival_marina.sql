@@ -744,7 +744,7 @@ END$$
 
 DELIMITER ;
 
-/*
+
 --- Review Triggers ---
 --- Review Trigger 1 ---
 -- Ensure that a review can only be created if the ticket is activated
@@ -761,17 +761,15 @@ BEGIN
     FROM ticket
     WHERE ticket_ID = NEW.ticket_ID;
 
-    IF is_active IS NULL THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Ticket does not exist.';
-    ELSEIF is_active = FALSE THEN
+IF is_active = FALSE THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Cannot review with inactive ticket.';
     END IF;
 END$$
 
 DELIMITER ;
-*/
+
+
 
 
 --- === CONSTRAINTS === ---

@@ -23,3 +23,4 @@ JOIN genre_year_counts g2
     AND g2.year = g1.year + 1
     AND g1.appearances = g2.appearances
 ORDER BY g1.genre_name, g1.year;
+-- ok
