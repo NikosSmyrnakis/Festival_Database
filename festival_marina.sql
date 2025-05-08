@@ -797,6 +797,33 @@ IF is_active = FALSE THEN
 END$$
 
 DELIMITER ;
+--- role_of_personel_on_event Triggers ---
+--- Role Trigger 1 ---
+-- Ensure that the same personel cannot have multiple roles in the same event
+DELIMITER $$
+
+CREATE TRIGGER check_personel_availability
+BEFORE INSERT ON role_of_personel_on_event
+FOR EACH ROW
+BEGIN
+    DECLARE overlap_count INT;
+
+    SELECT COUNT(*) INTO overlap_count
+    FROM role_of_personel_on_event r
+    JOIN events e1 ON r.event_ID = e1.event_ID
+    JOIN events e2 ON NEW.event_ID = e2.event_ID
+    WHERE r.personel_ID = NEW.personel_ID
+      AND (
+           (e1.event_start_time <= e2.event_end_time AND e1.event_end_time >= e2.event_start_time)
+          );
+
+    IF overlap_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'This person is already assigned to an overlapping event.';
+    END IF;
+END $$
+
+DELIMITER ;
 
 
 
@@ -829,5 +856,7 @@ ADD CONSTRAINT chk_one_side_only CHECK (
 );
 --- Event Constraints ---
 --- Ο έλεγχος για  παράλληλα event γίνεται με trigger ---
+
+
 
 
