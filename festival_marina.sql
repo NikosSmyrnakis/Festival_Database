@@ -998,6 +998,31 @@ END$$
 DELIMITER ;
 
 */
+DELIMITER $$
+
+CREATE TRIGGER trg_prevent_activated_ticket_resale
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE is_activated BOOLEAN;
+
+    -- Αν είναι seller που εισάγεται και έχει ticket_ID
+    IF NEW.seller_ID IS NOT NULL AND NEW.ticket_ID IS NOT NULL THEN
+        -- Πάρε το activated_status του εισιτηρίου
+        SELECT activated_status INTO is_activated
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+
+        -- Αν είναι ήδη ενεργοποιημένο, μπλόκαρε την εισαγωγή
+        IF is_activated = TRUE THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Cannot resell ticket: it has already been activated.';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
 
 --- === CONSTRAINTS === ---
 --- Resale Constraints ---
