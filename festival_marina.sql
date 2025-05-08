@@ -689,6 +689,33 @@ END$$
 DELIMITER ;
 */
 
+--- Performance Trigger 5 ---
+--- Check for overlapping performances in the same building and event
+DELIMITER $$
+
+CREATE TRIGGER prevent_overlapping_performances
+BEFORE INSERT ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE conflict_count INT;
+
+    SELECT COUNT(*) INTO conflict_count
+    FROM performances p
+    WHERE p.event_ID = NEW.event_ID
+      AND p.building_ID = NEW.building_ID
+      AND (
+            p.performance_start_time < NEW.performance_end_time AND
+            p.performance_end_time > NEW.performance_start_time
+          );
+
+    IF conflict_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Overlapping performance detected in the same building and event.';
+    END IF;
+END$$
+
+DELIMITER ;
+
 
 
 
@@ -797,6 +824,7 @@ IF is_active = FALSE THEN
 END$$
 
 DELIMITER ;
+/*
 --- role_of_personel_on_event Triggers ---
 --- Role Trigger 1 ---
 -- Ensure that the same personel cannot have multiple roles in the same event
@@ -823,7 +851,7 @@ BEGIN
     END IF;
 END $$
 
-DELIMITER ;
+DELIMITER ;*/
 
 
 
