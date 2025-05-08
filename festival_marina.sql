@@ -947,9 +947,57 @@ BEGIN
 END $$
 
 DELIMITER ;
+/*
+DELIMITER $$
 
+CREATE TRIGGER trg_check_soldout_before_resale
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE event_id_val INT;
+    DECLARE ticket_type_val ENUM('general_admission', 'VIP', 'backstage');
+    DECLARE total_available INT;
+    DECLARE sold_count INT;
+    DECLARE msg_text VARCHAR(255); -- 🟢 μεταφέρθηκε εδώ!
 
+    -- Περίπτωση 1 ή 2: Έχουμε ticket_ID → παίρνουμε ticket_type & event_ID
+    IF NEW.ticket_ID IS NOT NULL THEN
+        SELECT ticket_type, event_ID INTO ticket_type_val, event_id_val
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+    
+    -- Περίπτωση 3: Δεν έχουμε ticket_ID → μπλοκάρουμε την εισαγωγή
+    ELSE
+        SET msg_text = 'Cannot verify sold-out status without a ticket_ID.';
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = msg_text;
+    END IF;
 
+    -- Πάρε τον συνολικό αριθμό εισιτηρίων για αυτόν τον τύπο και event
+    IF ticket_type_val = 'VIP' THEN
+        SELECT VIP_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSEIF ticket_type_val = 'backstage' THEN
+        SELECT backstage_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSE
+        SELECT general_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    END IF;
+
+    -- Μέτρα πόσα έχουν πουληθεί ήδη
+    SELECT COUNT(*) INTO sold_count
+    FROM ticket
+    WHERE event_ID = event_id_val AND ticket_type = ticket_type_val;
+
+    -- Αν δεν έχουν εξαντληθεί, μπλόκαρε
+    IF sold_count < total_available THEN
+        SET msg_text = CONCAT('Resale not allowed: ', ticket_type_val, ' tickets are not sold out yet.');
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = msg_text;
+    END IF;
+END$$
+
+DELIMITER ;
+
+*/
 
 --- === CONSTRAINTS === ---
 --- Resale Constraints ---
