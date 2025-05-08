@@ -1,3 +1,5 @@
 artist_ID	artist_name	continent_count
-53	Ed Sheeran	10
-54	Tina Turner	8
+29	John Kent	3
+35	Derrick Garza	3
+39	Erika Wyatt	3
+48	Carrie Rhodes	3

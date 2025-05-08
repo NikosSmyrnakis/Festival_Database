@@ -18,4 +18,3 @@ HAVING
 ORDER BY
     warm_up_count DESC;
 
--- ok

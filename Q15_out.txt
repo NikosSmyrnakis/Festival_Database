@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-139	Susan Hicks	9	Susan Perez	22
-123	Monica George	38	Derrick Wolfe	22
-147	Michelle Jones	19	Christina Garza	21
-81	Brenda Wells	45	Veronica Parrish	21
-147	Michelle Jones	37	Cassandra Holland	21
+70	Alexandra Williamson	11	Susan Lee	22
+1	Michelle Bridges	12	Latoya Brady	22
+77	Morgan Dominguez	39	Erika Wyatt	20
+86	Stephanie Wong	48	Carrie Rhodes	20
+42	Jacob Smith	17	Katrina Acevedo	20

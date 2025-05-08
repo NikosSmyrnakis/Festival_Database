@@ -1,4 +1,4 @@
 genre1	genre2	appearances
-Classical	Rock	7
-Jazz	Rock	7
-Classical	Jazz	7
+Electronic	Rock	9
+Jazz	Rock	8
+Electronic	Jazz	7

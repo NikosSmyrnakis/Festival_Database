@@ -736,7 +736,7 @@ for ticket_id, event_id in active_tickets:
 ### make photos
 link_types = ['artist', 'group', 'performance', 'event', 'festival', 'equipment']
 
-for i in range(50):  # Εισαγωγή 10 φωτογραφιών
+for i in range(50):
     link_type = random.choice(link_types)
 
     # Αρχικοποίηση όλων σε None

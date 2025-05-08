@@ -1,6 +1,6 @@
 artist_ID	artist_name	age	festival_participations
-27	Michelle Smith	26	3
-38	Derrick Wolfe	24	3
-10	Harold Davis	21	3
-22	Douglas Castro	22	2
-2	Kim Phillips	20	2
+34	Timothy Fox	22	5
+29	John Kent	22	3
+39	Erika Wyatt	22	3
+48	Carrie Rhodes	26	3
+24	Debra Tran	29	2

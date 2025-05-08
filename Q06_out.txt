@@ -1,2 +1,0 @@
-visitor_name	event_name	avg_overall_impression
-Shane Richard	Left Concert	4.00

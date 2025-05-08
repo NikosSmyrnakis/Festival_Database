@@ -43,7 +43,7 @@ CREATE TABLE building (
 );
 
 CREATE TABLE technical_equipment (
-    techhnical_equipment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    technical_equipment_ID INT PRIMARY KEY AUTO_INCREMENT,
     building_ID INT,
     equipment_name VARCHAR(255) NOT NULL,
     equipment_description TEXT NOT NULL,
@@ -248,6 +248,23 @@ CREATE TABLE temp_resale_matches (
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
 
+CREATE TABLE photo(
+    photo_ID INT AUTO_INCREMENT PRIMARY KEY,
+    photo_name VARCHAR(255) NOT NULL,
+    photo_description TEXT NOT NULL,
+    artist_ID INT,
+    group_ID INT,
+    performance_ID INT,
+    event_ID INT,
+    festival_ID INT,
+    technical_equipment_ID INT,
+    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID),
+    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
+    FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID),
+    FOREIGN KEY (event_ID) REFERENCES events(event_ID),
+    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID),
+    FOREIGN KEY (technical_equipment_ID) REFERENCES technical_equipment(technical_equipment_ID)
+);
 
 -- === INDEXES === ---
 -- nikos
@@ -965,19 +982,6 @@ BEGIN
     DECLARE total_available INT;
     DECLARE sold_count INT;
     DECLARE msg_text VARCHAR(255);
-
-    -- Περίπτωση 1 ή 2: Έχουμε ticket_ID → παίρνουμε ticket_type & event_ID
-    IF NEW.ticket_ID IS NOT NULL THEN
-        SELECT ticket_type, event_ID INTO ticket_type_val, event_id_val
-        FROM ticket
-        WHERE ticket_ID = NEW.ticket_ID;
-    
-    -- Περίπτωση 3: Δεν έχουμε ticket_ID → μπλοκάρουμε την εισαγωγή
-    ELSE
-        SET msg_text = 'Cannot verify sold-out status without a ticket_ID.';
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = msg_text;
-    END IF;
 
     -- Πάρε τον συνολικό αριθμό εισιτηρίων για αυτόν τον τύπο και event
     IF ticket_type_val = 'VIP' THEN

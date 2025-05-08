@@ -1,2 +1,0 @@
-artist_name	avg_artist_performance	avg_overall_impression
-Jason Murillo	3.67	2.67
