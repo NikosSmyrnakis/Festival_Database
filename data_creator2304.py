@@ -283,11 +283,15 @@ for eid in event_ids:
     for pid in involved:
         if (pid, eid) not in personel_event_roles:
             role = random.choice(roles)
-            cursor.execute("""
-                INSERT IGNORE INTO role_of_personel_on_event (personel_ID, event_ID, role)
-                VALUES (%s, %s, %s)
-            """, (pid, eid, role))
-            personel_event_roles.add((pid, eid))
+            try:
+                cursor.execute("""
+                    INSERT IGNORE INTO role_of_personel_on_event (personel_ID, event_ID, role)
+                    VALUES (%s, %s, %s)
+                """, (pid, eid, role))
+                personel_event_roles.add((pid, eid))
+            except:
+                print("shit3 happened")
+            
 
 
 # Commit all changes

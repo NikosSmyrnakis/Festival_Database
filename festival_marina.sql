@@ -559,7 +559,7 @@ BEGIN
 END $$
 
 DELIMITER ;
-
+/*
 --- Performance Trigger 3 ---
 --- Check for consecutive years of participation for artists
 DELIMITER $$
@@ -690,6 +690,94 @@ BEGIN
 END$$
 
 DELIMITER ;
+*/
+
+--- Performance Trigger 5 ---
+--- Check for overlapping performances in the same building and event
+DELIMITER $$
+
+CREATE TRIGGER prevent_overlapping_performances
+BEFORE INSERT ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE conflict_count INT;
+
+    SELECT COUNT(*) INTO conflict_count
+    FROM performances p
+    WHERE p.event_ID = NEW.event_ID
+      AND p.building_ID = NEW.building_ID
+      AND (
+            p.performance_start_time < NEW.performance_end_time AND
+            p.performance_end_time > NEW.performance_start_time
+          );
+
+    IF conflict_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Overlapping performance detected in the same building and event.';
+    END IF;
+END$$
+
+DELIMITER ;
+
+--- Performance Trigger 6 ---
+--- Check for overlapping performances for the same artist or group
+DELIMITER $$
+
+CREATE TRIGGER prevent_artist_group_overlap
+BEFORE INSERT ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE overlap_count INT;
+
+    SELECT COUNT(*) INTO overlap_count
+    FROM performances p
+    WHERE (
+              (NEW.artist_ID IS NOT NULL AND p.artist_ID = NEW.artist_ID)
+           OR (NEW.group_ID IS NOT NULL AND p.group_ID = NEW.group_ID)
+          )
+      AND (
+           p.performance_start_time < NEW.performance_end_time AND
+           p.performance_end_time > NEW.performance_start_time
+      );
+
+    IF overlap_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Artist or group has an overlapping performance.';
+    END IF;
+END$$
+
+DELIMITER ;
+
+--- Performance Trigger 7 ---
+--- Check for overlapping performances for the same artist or group on update
+DELIMITER $$
+
+CREATE TRIGGER prevent_artist_group_overlap_update
+BEFORE UPDATE ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE overlap_count INT;
+
+    SELECT COUNT(*) INTO overlap_count
+    FROM performances p
+    WHERE p.performance_ID != NEW.performance_ID
+      AND (
+              (NEW.artist_ID IS NOT NULL AND p.artist_ID = NEW.artist_ID)
+           OR (NEW.group_ID IS NOT NULL AND p.group_ID = NEW.group_ID)
+          )
+      AND (
+           p.performance_start_time < NEW.performance_end_time AND
+           p.performance_end_time > NEW.performance_start_time
+      );
+
+    IF overlap_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Artist or group has an overlapping performance (on update).';
+    END IF;
+END$$
+
+DELIMITER ;
+
 
 
 
@@ -801,6 +889,34 @@ END$$
 
 DELIMITER ;
 
+--- role_of_personel_on_event Triggers ---
+--- Role Trigger 1 ---
+-- Ensure that the same personel cannot have multiple roles in the same event
+DELIMITER $$
+
+CREATE TRIGGER check_personel_availability
+BEFORE INSERT ON role_of_personel_on_event
+FOR EACH ROW
+BEGIN
+    DECLARE overlap_count INT;
+
+    SELECT COUNT(*) INTO overlap_count
+    FROM role_of_personel_on_event r
+    JOIN events e1 ON r.event_ID = e1.event_ID
+    JOIN events e2 ON NEW.event_ID = e2.event_ID
+    WHERE r.personel_ID = NEW.personel_ID
+      AND (
+           (e1.event_start_time <= e2.event_end_time AND e1.event_end_time >= e2.event_start_time)
+          );
+
+    IF overlap_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'This person is already assigned to an overlapping event.';
+    END IF;
+END $$
+
+DELIMITER ;
+
 
 
 
@@ -832,5 +948,7 @@ ADD CONSTRAINT chk_one_side_only CHECK (
 );
 --- Event Constraints ---
 --- Ο έλεγχος για  παράλληλα event γίνεται με trigger ---
+
+
 
 
