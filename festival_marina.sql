@@ -447,6 +447,7 @@ DELIMITER ;
 
 --- Event Triggers ---
 --- Event Trigger 1 ---
+-- Ensure that the festival_day is within the festival duration
 DELIMITER $$
 
 CREATE TRIGGER check_festival_day
@@ -467,7 +468,9 @@ END$$
 
 DELIMITER ;
 
+--- Gerne Triggers ---
 --- Genre Trigger 1 ---
+-- Ensure that each genre is linked to either one artist or one group, but not both or neither
 DELIMITER $$
 
 CREATE TRIGGER check_genre_entity_exclusivity
@@ -517,6 +520,7 @@ END$$
 DELIMITER ;
 
 --- Performance Trigger 2 ---
+-- Check if the performance belongs to the same event as the ticket
 DELIMITER $$
 
 CREATE TRIGGER check_review_validity
@@ -720,6 +724,31 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+-- Ticket Trigger 2 ---
+-- Prevent duplicate tickets for the same visitor and event
+DELIMITER $$
+
+CREATE TRIGGER prevent_duplicate_ticket
+BEFORE INSERT ON ticket
+FOR EACH ROW
+BEGIN
+    DECLARE duplicate_count INT;
+
+    SELECT COUNT(*) INTO duplicate_count
+    FROM ticket
+    WHERE event_ID = NEW.event_ID
+      AND visitor_ID = NEW.visitor_ID;
+
+    IF duplicate_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Visitor already has a ticket for this event.';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- Group Triggers ---
 -- Group Trigger 1 ---
 -- When a new group member is added, update the member_names field in the group table
 
@@ -744,7 +773,7 @@ END$$
 
 DELIMITER ;
 
-/*
+
 --- Review Triggers ---
 --- Review Trigger 1 ---
 -- Ensure that a review can only be created if the ticket is activated
@@ -761,17 +790,15 @@ BEGIN
     FROM ticket
     WHERE ticket_ID = NEW.ticket_ID;
 
-    IF is_active IS NULL THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Ticket does not exist.';
-    ELSEIF is_active = FALSE THEN
+IF is_active = FALSE THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Cannot review with inactive ticket.';
     END IF;
 END$$
 
 DELIMITER ;
-*/
+
+
 
 
 --- === CONSTRAINTS === ---
