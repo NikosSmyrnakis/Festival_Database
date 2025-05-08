@@ -290,118 +290,7 @@ DELIMITER ;
 
 
 --- Visitor Triggers --- 
---- Artist Trigger 1 ---
-/*
-DELIMITER $$
 
-CREATE TRIGGER limit_participant_consecutive_years
-AFTER INSERT ON performances
-FOR EACH ROW
-BEGIN
-   DECLARE festival_year INT;
-   DECLARE is_artist BOOL DEFAULT FALSE;
-   DECLARE is_group BOOL DEFAULT FALSE;
-   DECLARE participant_id INT;
-   DECLARE consec_years INT DEFAULT 1;
-   DECLARE prev_year INT;
-
-   -- Get festival year from inserted performance
-   SELECT YEAR(f.starting_date) INTO festival_year
-   FROM events e
-   JOIN festival f ON e.festival_ID = f.festival_ID
-   WHERE e.event_ID = NEW.event_ID;
-
-   -- Determine if it's artist or group
-   IF NEW.artist_ID IS NOT NULL THEN
-       SET is_artist = TRUE;
-       SET participant_id = NEW.artist_ID;
-   ELSEIF NEW.group_ID IS NOT NULL THEN
-       SET is_group = TRUE;
-       SET participant_id = NEW.group_ID;
-   ELSE
-       -- No artist or group provided
-       LEAVE limit_participant_consecutive_years;
-   END IF;
-
-   -- Create temporary table to collect participation years
-   CREATE TEMPORARY TABLE IF NOT EXISTS tmp_years (
-       year_part INT
-   );
-
-   -- Insert previous years of participation (excluding current)
-   IF is_artist THEN
-       INSERT INTO tmp_years (year_part)
-       SELECT DISTINCT YEAR(f.starting_date)
-       FROM performances p
-       JOIN events e ON p.event_ID = e.event_ID
-       JOIN festival f ON e.festival_ID = f.festival_ID
-       WHERE p.artist_ID = participant_id
-         AND YEAR(f.starting_date) <> festival_year;
-   ELSEIF is_group THEN
-       INSERT INTO tmp_years (year_part)
-       SELECT DISTINCT YEAR(f.starting_date)
-       FROM performances p
-       JOIN events e ON p.event_ID = e.event_ID
-       JOIN festival f ON e.festival_ID = f.festival_ID
-       WHERE p.group_ID = participant_id
-         AND YEAR(f.starting_date) <> festival_year;
-   END IF;
-
-   -- Add current year
-   INSERT INTO tmp_years (year_part) VALUES (festival_year);
-
-   -- Walk through years and count consecutive ones
-   DECLARE done INT DEFAULT FALSE;
-   DECLARE y INT;
-   DECLARE curr_consec INT DEFAULT 1;
-   DECLARE cur CURSOR FOR SELECT year_part FROM tmp_years ORDER BY year_part;
-   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-   OPEN cur;
-   SET prev_year = NULL;
-
-   read_loop: LOOP
-       FETCH cur INTO y;
-       IF done THEN
-           LEAVE read_loop;
-       END IF;
-
-       IF prev_year IS NOT NULL THEN
-           IF y = prev_year + 1 THEN
-               SET curr_consec = curr_consec + 1;
-           ELSE
-               SET curr_consec = 1;
-           END IF;
-       END IF;
-
-       SET prev_year = y;
-
-       IF curr_consec > 3 THEN
-           SIGNAL SQLSTATE '45000'
-           SET MESSAGE_TEXT = 'Participants cannot perform more than 3 consecutive years.';
-       END IF;
-   END LOOP;
-   CLOSE cur;
-
-   SET consec_years = curr_consec;
-
-   -- Update correct table
-   IF is_artist THEN
-       UPDATE artist
-       SET num_of_consecutive_years_participating = consec_years
-       WHERE artist_ID = participant_id;
-   ELSEIF is_group THEN
-       UPDATE `group`
-       SET num_of_consecutive_years_participating = consec_years
-       WHERE group_ID = participant_id;
-   END IF;
-
-   DROP TEMPORARY TABLE IF EXISTS tmp_years;
-
-END $$
-
-DELIMITER ;
-*/
 --- Ticket Trigger 1 ---
 --- Check if the ticket can be sold based on the event's capacity and ticket type limits
 
@@ -472,7 +361,7 @@ DELIMITER ;
 
 
 
---- Visitor Trigger 1 --- 
+--- Visitor Trigger 2 --- 
 -- When a new visitor is created, create a corresponding buyer entry
 -- with the same visitor_ID and default pending_orders_buyer = 0
 -- This is to ensure that every visitor can be a buyer or seller
@@ -488,7 +377,7 @@ BEGIN
 END$$
 DELIMITER ;
 
---- Visitor Trigger 2 ---
+--- Visitor Trigger 3 ---
 -- When a new visitor is created, create a corresponding seller entry
 -- with the same visitor_ID and default pending_orders_seller = 0
 -- This is to ensure that every visitor can be a buyer or seller
@@ -663,121 +552,138 @@ BEGIN
 END $$
 
 DELIMITER ;
-
---- Performance Trigger 3 ---
---- Check for consecutive years of participation for artists/groups
 /*
+--- Performance Trigger 3 ---
+--- Check for consecutive years of participation for artists
 DELIMITER $$
 
-CREATE TRIGGER limit_participant_consecutive_years
-AFTER INSERT ON performances
+CREATE TRIGGER trg_check_consecutive_years_artists
+BEFORE INSERT ON performances
 FOR EACH ROW
 BEGIN
-   DECLARE festival_year INT;
-   DECLARE is_artist BOOL DEFAULT FALSE;
-   DECLARE is_group BOOL DEFAULT FALSE;
-   DECLARE participant_id INT;
-   DECLARE consec_years INT DEFAULT 1;
-   DECLARE prev_year INT;
+    DECLARE fest_year INT;
+    DECLARE found_current_festival INT DEFAULT 0;
+    DECLARE prev_year_exists INT DEFAULT 0;
+    DECLARE curr_num INT DEFAULT 0;
 
-   -- Get festival year from inserted performance
-   SELECT YEAR(f.starting_date) INTO festival_year
-   FROM events e
-   JOIN festival f ON e.festival_ID = f.festival_ID
-   WHERE e.event_ID = NEW.event_ID;
+    -- Εφαρμόζεται ΜΟΝΟ αν υπάρχει artist_ID (δηλαδή performance για solo καλλιτέχνη)
+    IF NEW.artist_ID IS NOT NULL THEN
 
-   -- Determine if it's artist or group
-   IF NEW.artist_ID IS NOT NULL THEN
-       SET is_artist = TRUE;
-       SET participant_id = NEW.artist_ID;
-   ELSEIF NEW.group_ID IS NOT NULL THEN
-       SET is_group = TRUE;
-       SET participant_id = NEW.group_ID;
-   ELSE
-       -- No artist or group provided
-       LEAVE limit_participant_consecutive_years;
-   END IF;
+        -- Βρες τη χρονιά του φεστιβάλ
+        SELECT YEAR(f.starting_date) INTO fest_year
+        FROM events e
+        JOIN festival f ON e.festival_ID = f.festival_ID
+        WHERE e.event_ID = NEW.event_ID;
 
-   -- Create temporary table to collect participation years
-   CREATE TEMPORARY TABLE IF NOT EXISTS tmp_years (
-       year_part INT
-   );
+        -- Έχει ήδη performance στο ίδιο φεστιβάλ;
+        SELECT COUNT(*) INTO found_current_festival
+        FROM performances p
+        JOIN events e ON p.event_ID = e.event_ID
+        JOIN festival f ON e.festival_ID = f.festival_ID
+        WHERE p.artist_ID = NEW.artist_ID
+          AND YEAR(f.starting_date) = fest_year;
 
-   -- Insert previous years of participation (excluding current)
-   IF is_artist THEN
-       INSERT INTO tmp_years (year_part)
-       SELECT DISTINCT YEAR(f.starting_date)
-       FROM performances p
-       JOIN events e ON p.event_ID = e.event_ID
-       JOIN festival f ON e.festival_ID = f.festival_ID
-       WHERE p.artist_ID = participant_id
-         AND YEAR(f.starting_date) <> festival_year;
-   ELSEIF is_group THEN
-       INSERT INTO tmp_years (year_part)
-       SELECT DISTINCT YEAR(f.starting_date)
-       FROM performances p
-       JOIN events e ON p.event_ID = e.event_ID
-       JOIN festival f ON e.festival_ID = f.festival_ID
-       WHERE p.group_ID = participant_id
-         AND YEAR(f.starting_date) <> festival_year;
-   END IF;
+        -- Αν έχει ήδη συμμετάσχει φέτος, μην κάνεις τίποτα
+        IF found_current_festival = 0 THEN
 
-   -- Add current year
-   INSERT INTO tmp_years (year_part) VALUES (festival_year);
+            -- Είχε performance πέρυσι;
+            SELECT COUNT(*) INTO prev_year_exists
+            FROM performances p
+            JOIN events e ON p.event_ID = e.event_ID
+            JOIN festival f ON e.festival_ID = f.festival_ID
+            WHERE p.artist_ID = NEW.artist_ID
+              AND YEAR(f.starting_date) = fest_year - 1;
 
-   -- Walk through years and count consecutive ones
-   DECLARE done INT DEFAULT FALSE;
-   DECLARE y INT;
-   DECLARE curr_consec INT DEFAULT 1;
-   DECLARE cur CURSOR FOR SELECT year_part FROM tmp_years ORDER BY year_part;
-   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+            -- Αν είχε και πέρυσι, έλεγξε και το count
+            IF prev_year_exists > 0 THEN
+                SELECT num_of_consecutive_years_participating INTO curr_num
+                FROM artist
+                WHERE artist_ID = NEW.artist_ID;
 
-   OPEN cur;
-   SET prev_year = NULL;
+                IF curr_num >= 3 THEN
+                    SIGNAL SQLSTATE '45001'
+                    SET MESSAGE_TEXT = 'The artist cannot participate in more than 3 consecutive years.';
+                ELSE
+                    UPDATE artist
+                    SET num_of_consecutive_years_participating = curr_num + 1
+                    WHERE artist_ID = NEW.artist_ID;
+                END IF;
+            ELSE
+                -- Αν ΔΕΝ είχε πέρυσι, ξεκινάμε νέο count
+                UPDATE artist
+                SET num_of_consecutive_years_participating = 1
+                WHERE artist_ID = NEW.artist_ID;
+            END IF;
 
-   read_loop: LOOP
-       FETCH cur INTO y;
-       IF done THEN
-           LEAVE read_loop;
-       END IF;
+        END IF;
+    END IF;
+END$$
 
-       IF prev_year IS NOT NULL THEN
-           IF y = prev_year + 1 THEN
-               SET curr_consec = curr_consec + 1;
-           ELSE
-               SET curr_consec = 1;
-           END IF;
-       END IF;
+DELIMITER ;
 
-       SET prev_year = y;
 
-       IF curr_consec > 3 THEN
-           SIGNAL SQLSTATE '45000'
-           SET MESSAGE_TEXT = 'Participants cannot perform more than 3 consecutive years.';
-       END IF;
-   END LOOP;
-   CLOSE cur;
 
-   SET consec_years = curr_consec;
+--- Performance Trigger 4 ---
+--- Check for consecutive years of participation for groups
+DELIMITER $$
 
-   -- Update correct table
-   IF is_artist THEN
-       UPDATE artist
-       SET num_of_consecutive_years_participating = consec_years
-       WHERE artist_ID = participant_id;
-   ELSEIF is_group THEN
-       UPDATE `group`
-       SET num_of_consecutive_years_participating = consec_years
-       WHERE group_ID = participant_id;
-   END IF;
+CREATE TRIGGER trg_check_consecutive_years_groups
+BEFORE INSERT ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE fest_year INT;
+    DECLARE found_current_festival INT DEFAULT 0;
+    DECLARE prev_year_exists INT DEFAULT 0;
+    DECLARE curr_num INT DEFAULT 0;
 
-   DROP TEMPORARY TABLE IF EXISTS tmp_years;
+    IF NEW.group_ID IS NOT NULL THEN
 
-END $$
+        SELECT YEAR(f.starting_date) INTO fest_year
+        FROM events e
+        JOIN festival f ON e.festival_ID = f.festival_ID
+        WHERE e.event_ID = NEW.event_ID;
+
+        SELECT COUNT(*) INTO found_current_festival
+        FROM performances p
+        JOIN events e ON p.event_ID = e.event_ID
+        JOIN festival f ON e.festival_ID = f.festival_ID
+        WHERE p.group_ID = NEW.group_ID
+          AND YEAR(f.starting_date) = fest_year;
+
+        IF found_current_festival = 0 THEN
+
+            SELECT COUNT(*) INTO prev_year_exists
+            FROM performances p
+            JOIN events e ON p.event_ID = e.event_ID
+            JOIN festival f ON e.festival_ID = f.festival_ID
+            WHERE p.group_ID = NEW.group_ID
+              AND YEAR(f.starting_date) = fest_year - 1;
+
+            SELECT num_of_consecutive_years_participating INTO curr_num
+            FROM `group`
+            WHERE group_ID = NEW.group_ID;
+
+            IF prev_year_exists > 0 THEN
+                IF curr_num >= 3 THEN
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = 'The music group cannot participate in more than 3 consecutive years.';
+                ELSE
+                    UPDATE `group`
+                    SET num_of_consecutive_years_participating = curr_num + 1
+                    WHERE group_ID = NEW.group_ID;
+                END IF;
+            ELSE
+                UPDATE `group`
+                SET num_of_consecutive_years_participating = 1
+                WHERE group_ID = NEW.group_ID;
+            END IF;
+
+        END IF;
+    END IF;
+END$$
 
 DELIMITER ;
 */
-
 
 
 
@@ -896,6 +802,5 @@ ADD CONSTRAINT chk_one_side_only CHECK (
 );
 --- Event Constraints ---
 --- Ο έλεγχος για  παράλληλα event γίνεται με trigger ---
-
 
 
