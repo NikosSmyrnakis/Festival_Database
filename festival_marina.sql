@@ -838,7 +838,7 @@ END$$
 
 DELIMITER ;
 
-
+/*
 --- Review Triggers ---
 --- Review Trigger 1 ---
 -- Ensure that a review can only be created if the ticket is activated
@@ -865,7 +865,7 @@ BEGIN
 END$$
 
 DELIMITER ;
-
+*/
 
 
 --- === CONSTRAINTS === ---
