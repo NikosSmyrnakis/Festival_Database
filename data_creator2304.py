@@ -731,8 +731,51 @@ for ticket_id, event_id in active_tickets:
             str(random.randint(1, 5)),
             str(random.randint(1, 5))
         ))
-#Query 7 not empty set by marina
 
+
+### make photos
+link_types = ['artist', 'group', 'performance', 'event', 'festival', 'equipment']
+
+for i in range(50):  # Εισαγωγή 10 φωτογραφιών
+    link_type = random.choice(link_types)
+
+    # Αρχικοποίηση όλων σε None
+    artist_ID = group_ID = performance_ID = event_ID = festival_ID = technical_equipment_ID = None
+
+    if link_type == 'artist':
+        artist_ID = random.choice(artist_ids)
+    elif link_type == 'group':
+        group_ID = random.choice(group_ids)
+    elif link_type == 'performance':
+        performance_ID = random.choice(performance_ids)
+    elif link_type == 'event':
+        event_ID = random.choice(event_ids)
+    elif link_type == 'festival':
+        festival_ID = random.choice(festival_ids)
+    elif link_type == 'equipment':
+        technical_equipment_ID = random.choice(equipment_ids)
+
+    cursor.execute("""
+        INSERT INTO photo (
+            photo_name,
+            photo_description,
+            artist_ID,
+            group_ID,
+            performance_ID,
+            event_ID,
+            festival_ID,
+            technical_equipment_ID
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        f"images\\IMG_{i+1}.jpg",
+        fake.sentence(),
+        artist_ID,
+        group_ID,
+        performance_ID,
+        event_ID,
+        festival_ID,
+        technical_equipment_ID
+    ))
 # 4. Commit για να αποθηκευτούν οι αλλαγές
 conn.commit()
 

@@ -953,7 +953,7 @@ BEGIN
 END $$
 
 DELIMITER ;
-/*
+
 DELIMITER $$
 
 CREATE TRIGGER trg_check_soldout_before_resale
@@ -964,7 +964,7 @@ BEGIN
     DECLARE ticket_type_val ENUM('general_admission', 'VIP', 'backstage');
     DECLARE total_available INT;
     DECLARE sold_count INT;
-    DECLARE msg_text VARCHAR(255); -- 🟢 μεταφέρθηκε εδώ!
+    DECLARE msg_text VARCHAR(255);
 
     -- Περίπτωση 1 ή 2: Έχουμε ticket_ID → παίρνουμε ticket_type & event_ID
     IF NEW.ticket_ID IS NOT NULL THEN
@@ -1003,7 +1003,7 @@ END$$
 
 DELIMITER ;
 
-*/
+
 
 --- === CONSTRAINTS === ---
 --- Resale Constraints ---
