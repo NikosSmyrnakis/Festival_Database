@@ -716,6 +716,36 @@ END$$
 
 DELIMITER ;
 
+--- Performance Trigger 6 ---
+--- Check for overlapping performances for the same artist or group
+DELIMITER $$
+
+CREATE TRIGGER prevent_artist_group_overlap
+BEFORE INSERT ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE overlap_count INT;
+
+    SELECT COUNT(*) INTO overlap_count
+    FROM performances p
+    WHERE (
+              (NEW.artist_ID IS NOT NULL AND p.artist_ID = NEW.artist_ID)
+           OR (NEW.group_ID IS NOT NULL AND p.group_ID = NEW.group_ID)
+          )
+      AND (
+           p.performance_start_time < NEW.performance_end_time AND
+           p.performance_end_time > NEW.performance_start_time
+      );
+
+    IF overlap_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Artist or group has an overlapping performance.';
+    END IF;
+END$$
+
+DELIMITER ;
+
+
 
 
 
