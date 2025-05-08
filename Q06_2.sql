@@ -10,8 +10,8 @@ FROM
     JOIN events e ON t.event_ID = e.event_ID
     JOIN review r ON t.ticket_ID = r.ticket_ID
 WHERE
-    v.first_name = 'Rebecca'
-    AND v.last_name = 'Hill'
+    v.first_name = 'Shane'
+    AND v.last_name = 'Richard'
 GROUP BY
     e.event_name;
 
@@ -27,8 +27,8 @@ FROM
     JOIN events e ON t.event_ID = e.event_ID
     JOIN review r ON t.ticket_ID = r.ticket_ID
 WHERE
-    v.first_name = 'Rebecca'
-    AND v.last_name = 'Hill'
+    v.first_name = 'Shane'
+    AND v.last_name = 'Richard'
 GROUP BY
     e.event_name;
 
