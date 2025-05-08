@@ -559,7 +559,7 @@ BEGIN
 END $$
 
 DELIMITER ;
-/*
+
 --- Performance Trigger 3 ---
 --- Check for consecutive years of participation for artists
 DELIMITER $$
@@ -573,35 +573,30 @@ BEGIN
     DECLARE prev_year_exists INT DEFAULT 0;
     DECLARE curr_num INT DEFAULT 0;
 
-    -- Εφαρμόζεται ΜΟΝΟ αν υπάρχει artist_ID (δηλαδή performance για solo καλλιτέχνη)
     IF NEW.artist_ID IS NOT NULL THEN
 
-        -- Βρες τη χρονιά του φεστιβάλ
+        -- Πάρε τη χρονιά του φεστιβάλ μέσω του event_ID -> festival_ID
         SELECT YEAR(f.starting_date) INTO fest_year
         FROM events e
         JOIN festival f ON e.festival_ID = f.festival_ID
         WHERE e.event_ID = NEW.event_ID;
 
-        -- Έχει ήδη performance στο ίδιο φεστιβάλ;
+        -- Ελέγχει αν συμμετέχει ήδη φέτος
         SELECT COUNT(*) INTO found_current_festival
         FROM performances p
         JOIN events e ON p.event_ID = e.event_ID
-        JOIN festival f ON e.festival_ID = f.festival_ID
         WHERE p.artist_ID = NEW.artist_ID
-          AND YEAR(f.starting_date) = fest_year;
+          AND YEAR((SELECT starting_date FROM festival WHERE festival_ID = e.festival_ID)) = fest_year;
 
-        -- Αν έχει ήδη συμμετάσχει φέτος, μην κάνεις τίποτα
         IF found_current_festival = 0 THEN
 
-            -- Είχε performance πέρυσι;
+            -- Έλεγξε συμμετοχή το προηγούμενο έτος
             SELECT COUNT(*) INTO prev_year_exists
             FROM performances p
             JOIN events e ON p.event_ID = e.event_ID
-            JOIN festival f ON e.festival_ID = f.festival_ID
             WHERE p.artist_ID = NEW.artist_ID
-              AND YEAR(f.starting_date) = fest_year - 1;
+              AND YEAR((SELECT starting_date FROM festival WHERE festival_ID = e.festival_ID)) = fest_year - 1;
 
-            -- Αν είχε και πέρυσι, έλεγξε και το count
             IF prev_year_exists > 0 THEN
                 SELECT num_of_consecutive_years_participating INTO curr_num
                 FROM artist
@@ -616,7 +611,7 @@ BEGIN
                     WHERE artist_ID = NEW.artist_ID;
                 END IF;
             ELSE
-                -- Αν ΔΕΝ είχε πέρυσι, ξεκινάμε νέο count
+                -- Reset if skipped a year
                 UPDATE artist
                 SET num_of_consecutive_years_participating = 1
                 WHERE artist_ID = NEW.artist_ID;
@@ -627,6 +622,7 @@ BEGIN
 END$$
 
 DELIMITER ;
+
 
 
 
@@ -645,41 +641,66 @@ BEGIN
 
     IF NEW.group_ID IS NOT NULL THEN
 
-        SELECT YEAR(f.starting_date) INTO fest_year
-        FROM events e
-        JOIN festival f ON e.festival_ID = f.festival_ID
-        WHERE e.event_ID = NEW.event_ID;
+        -- Πάρε το έτος του φεστιβάλ μέσω nested SELECT
+        SELECT YEAR((
+            SELECT f.starting_date
+            FROM festival f
+            WHERE f.festival_ID = (
+                SELECT e.festival_ID
+                FROM events e
+                WHERE e.event_ID = NEW.event_ID
+            )
+        )) INTO fest_year;
 
+        -- Έλεγχος αν έχει ήδη συμμετάσχει φέτος
         SELECT COUNT(*) INTO found_current_festival
         FROM performances p
-        JOIN events e ON p.event_ID = e.event_ID
-        JOIN festival f ON e.festival_ID = f.festival_ID
         WHERE p.group_ID = NEW.group_ID
-          AND YEAR(f.starting_date) = fest_year;
+          AND (
+              SELECT YEAR((
+                  SELECT f.starting_date
+                  FROM festival f
+                  WHERE f.festival_ID = (
+                      SELECT e.festival_ID
+                      FROM events e
+                      WHERE e.event_ID = p.event_ID
+                  )
+              ))
+          ) = fest_year;
 
         IF found_current_festival = 0 THEN
 
+            -- Έλεγχος αν συμμετείχε πέρυσι
             SELECT COUNT(*) INTO prev_year_exists
             FROM performances p
-            JOIN events e ON p.event_ID = e.event_ID
-            JOIN festival f ON e.festival_ID = f.festival_ID
             WHERE p.group_ID = NEW.group_ID
-              AND YEAR(f.starting_date) = fest_year - 1;
-
-            SELECT num_of_consecutive_years_participating INTO curr_num
-            FROM `group`
-            WHERE group_ID = NEW.group_ID;
+              AND (
+                  SELECT YEAR((
+                      SELECT f.starting_date
+                      FROM festival f
+                      WHERE f.festival_ID = (
+                          SELECT e.festival_ID
+                          FROM events e
+                          WHERE e.event_ID = p.event_ID
+                      )
+                  ))
+              ) = fest_year - 1;
 
             IF prev_year_exists > 0 THEN
+                SELECT num_of_consecutive_years_participating INTO curr_num
+                FROM `group`
+                WHERE group_ID = NEW.group_ID;
+
                 IF curr_num >= 3 THEN
-                    SIGNAL SQLSTATE '45000'
-                    SET MESSAGE_TEXT = 'The music group cannot participate in more than 3 consecutive years.';
+                    SIGNAL SQLSTATE '45002'
+                    SET MESSAGE_TEXT = 'The group cannot participate in more than 3 consecutive years.';
                 ELSE
                     UPDATE `group`
                     SET num_of_consecutive_years_participating = curr_num + 1
                     WHERE group_ID = NEW.group_ID;
                 END IF;
             ELSE
+                -- Νέα έναρξη συμμετοχών
                 UPDATE `group`
                 SET num_of_consecutive_years_participating = 1
                 WHERE group_ID = NEW.group_ID;
@@ -690,7 +711,8 @@ BEGIN
 END$$
 
 DELIMITER ;
-*/
+
+
 
 --- Performance Trigger 5 ---
 --- Check for overlapping performances in the same building and event
