@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-44	Anna Kemp	23	Nicole Hartman	23
-86	Pamela Garcia	8	Michelle Martinez	22
-139	Brittany Gilmore	30	Nicholas Lindsey	22
-86	Pamela Garcia	14	John Wallace	22
-139	Brittany Gilmore	44	Mr. Billy Brown	22
+27	Veronica Smith	17	Kathryn Morris	33
+63	Jose Long	46	Kristy Johnson	21
+85	Kevin Williams	15	Maurice Campbell	21
+45	Kimberly Smith	19	Michele Bradley	21
+45	Kimberly Smith	2	Jeffrey Manning	21

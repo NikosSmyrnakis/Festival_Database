@@ -1,2 +1,4 @@
 artist_ID	artist_name	continent_count
-15	Katie Lewis	3
+18	Connie Mccann	3
+20	Tonya Lawrence	3
+37	Bradley Scott Jr.	3

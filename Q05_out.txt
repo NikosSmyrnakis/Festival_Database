@@ -1,6 +1,6 @@
 artist_ID	artist_name	age	festival_participations
-30	Nicholas Lindsey	23	3
-15	Katie Lewis	28	3
-38	Mr. Jeffrey Copeland	21	2
-42	Emily Stanley	26	2
-2	Chelsea Hunter	25	2
+18	Connie Mccann	25	4
+20	Tonya Lawrence	26	3
+17	Kathryn Morris	24	3
+32	Aimee Petty MD	23	2
+33	Hailey Stewart	27	2
