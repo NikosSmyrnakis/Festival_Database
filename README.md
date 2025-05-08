@@ -160,8 +160,8 @@ CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name);
 Για τη δημιουργία κάθε αρχείου εξόδου, χρησιμοποιήθηκε η παρακάτω εντολή από τερματικό (bash/cmd):
 
 ```bash
-mysql -u USERNAME -p db1 < Q01.sql > Q01_out.txt
+mysql -u root -p db1 < Q01.sql > Q01_out.txt
 ```
 
-Αντικαθιστώντας το `USERNAME` με τον χρήστη της βάσης και επαναλαμβάνοντας ανάλογα για τα queries 2–15.
+
 

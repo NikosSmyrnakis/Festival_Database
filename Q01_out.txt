@@ -8,3 +8,4 @@ festival_year	total_revenue
 2023	851.97
 2024	1130.96
 2025	2562.85
+
