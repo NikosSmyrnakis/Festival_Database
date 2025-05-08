@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-27	Veronica Smith	17	Kathryn Morris	33
-63	Jose Long	46	Kristy Johnson	21
-85	Kevin Williams	15	Maurice Campbell	21
-45	Kimberly Smith	19	Michele Bradley	21
-45	Kimberly Smith	2	Jeffrey Manning	21
+36	Diane Brooks	30	James Lyons	22
+121	Arthur Ramirez	33	Jonathan Soto	21
+35	Jackie Allen	12	Sandra Castro	21
+125	Elizabeth Vang	40	Kelsey Cooper	21
+145	Ashley Church	11	Ashley Olsen	20

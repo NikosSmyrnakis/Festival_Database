@@ -1,6 +1,6 @@
 artist_ID	artist_name	age	festival_participations
-18	Connie Mccann	25	4
-20	Tonya Lawrence	26	3
-17	Kathryn Morris	24	3
-32	Aimee Petty MD	23	2
-33	Hailey Stewart	27	2
+23	Eric Bell	29	4
+41	Breanna Sherman	29	3
+4	Jimmy Russell	20	3
+20	Rebecca Dennis	29	2
+3	Ann Martin	26	2

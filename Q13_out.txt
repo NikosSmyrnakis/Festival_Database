@@ -1,4 +1,3 @@
 artist_ID	artist_name	continent_count
-18	Connie Mccann	3
-20	Tonya Lawrence	3
-37	Bradley Scott Jr.	3
+18	Christopher Luna	3
+23	Eric Bell	3
