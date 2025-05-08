@@ -110,36 +110,58 @@ Besides the main SQL queries (`Q01–Q15`), we also included:
 
 Using this enhanced data, we generated a **new backup** of the database.
 
+## 🧱 STAGE 4 – Trigger Adjustments & Indexing
+
+### 📄 File Description
+Κατά την ανάπτυξη των queries στο Stage 3, υπήρξε σημαντικό back-and-forth, κυρίως λόγω της προσθήκης νέων **triggers** που επηρέαζαν την εκτέλεση των ερωτημάτων. Αφού καταλήξαμε σε ικανοποιητικές εκδοχές των queries, προχωρήσαμε στην **ανάπτυξη index** σε βασικά attributes, ώστε να βελτιώσουμε υπολογιστικά τις ενώσεις και τα φίλτρα των ερωτημάτων.
+
+Δεν προστέθηκε κάποιο νέο αρχείο στο repository. Τα αρχεία που έχουν δημιουργηθεί μέχρι αυτό το στάδιο είναι:
+
+- `Q01.sql` – `Q15.sql`
+- `Q04_2.sql`, `Q06_2.sql`
+- `festival_marina.sql`
+- `data_creator.py`
+- `restart.sql`
+- `backup_db.sql`
+- `db1_inserts.sql`
+- `Read_backup.sql`
+
+### 📘 Tutorial
+Η βασική αλλαγή σε αυτό το στάδιο ήταν η προσθήκη των παρακάτω index στο αρχείο `festival_marina.sql`, στο section `-- === INDEXES === --`:
+
+```sql
+CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID);
+CREATE INDEX idx_artist_name ON artist(artist_name);
+CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID);
+CREATE INDEX idx_perf_group_event ON performances(group_ID, event_ID);
+CREATE INDEX idx_events_festival ON events(festival_ID);
+CREATE INDEX idx_ticket_visitor_event ON ticket(visitor_ID, event_ID);
+CREATE INDEX idx_ticket_event ON ticket(event_ID);
+CREATE INDEX idx_review_ticket ON review(ticket_ID);
+CREATE INDEX idx_genre_artist ON genre(artist_ID);
+CREATE INDEX idx_genre_group ON genre(group_ID);
+CREATE INDEX idx_role_event_role ON role_of_personel_on_event(event_ID, role);
+CREATE INDEX idx_group_members_artist ON group_members(artist_ID);
+CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name);
+```
+
 ---
 
-## 📊 Σχόλια για την Υλοποίηση
+## 📤 STAGE 5 – Output Generation
 
-Υλοποιήσαμε τους παρακάτω πίνακες (σε παρένθεση ο αριθμός των dummy δεδομένων που δημιουργήθηκαν από το `data_creator2304.py`):
+Αφού ολοκληρώθηκε η βελτιστοποίηση των queries, προχωρήσαμε στη δημιουργία των ζητούμενων **αρχείων εξόδου** που περιέχουν τα αποτελέσματα εκτέλεσης κάθε ερωτήματος.
 
-**18 TABLES:**
+### 📄 File Description
+Σε αυτό το στάδιο προστέθηκαν τα εξής αρχεία:
 
-- `artist`  
-- `building`  
-- `buyer`   
-- `events`  
-- `festival`   
-- `festival_location`   
-- `group`  *(escaped because `group` is a reserved keyword)*  
-- `group_members`  
-- `performances`  
-- `personel` 
-- `resale_queue`   
-- `review` 
-- `role_of_personel_on_event`  
-- `seller`  
-- `temp_resale_matches`  
-- `ticket`   
-- `visitor`   
-- `gerne` 
+- `Q01_out.txt` – `Q15_out.txt`
 
----
+### 📘 Tutorial
+Για τη δημιουργία κάθε αρχείου εξόδου, χρησιμοποιήθηκε η παρακάτω εντολή από τερματικό (bash/cmd):
 
-## 📌 Παραδοχές (Based on ER Diagram)
+```bash
+mysql -u USERNAME -p db1 < Q01.sql > Q01_out.txt
+```
 
-- Κάθε επισκέπτης μπορεί να αγοράσει **μόνο ένα εισιτήριο** για **μια συγκεκριμένη παράσταση και ημέρα**.
-- Μπορεί όμως να αγοράσει **πολλά εισιτήρια συνολικά**, εφόσον κάθε ένα αντιστοιχεί σε **διαφορετική παράσταση ή/και ημέρα** του φεστιβάλ.
+Αντικαθιστώντας το `USERNAME` με τον χρήστη της βάσης και επαναλαμβάνοντας ανάλογα για τα queries 2–15.
+
