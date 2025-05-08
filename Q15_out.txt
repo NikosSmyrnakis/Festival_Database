@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-27	Veronica Smith	17	Kathryn Morris	33
-63	Jose Long	46	Kristy Johnson	21
-85	Kevin Williams	15	Maurice Campbell	21
-45	Kimberly Smith	19	Michele Bradley	21
-45	Kimberly Smith	2	Jeffrey Manning	21
+41	Joseph Osborne	1	Brittany Santiago	21
+41	Joseph Osborne	19	Lisa Burns	21
+87	Fernando Lowe	50	Carmen Campos	21
+15	Denise Meadows	45	Elizabeth Davis	20
+55	Kayla Martin	37	Daniel Dixon	20

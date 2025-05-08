@@ -1,4 +1,4 @@
 artist_ID	artist_name	continent_count
-18	Connie Mccann	3
-20	Tonya Lawrence	3
-37	Bradley Scott Jr.	3
+19	Lisa Burns	3
+21	Mark Daniels	3
+50	Carmen Campos	3

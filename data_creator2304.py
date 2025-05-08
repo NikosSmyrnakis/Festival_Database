@@ -97,22 +97,7 @@ for _ in range(30):
     ))
     building_ids.append(cursor.lastrowid)
 
-# === 4. Personel ===
-personel_ids = []
-levels = ['intern', 'beginer', 'intermidiate', 'experienced', 'very_experienced']
-for _ in range(100):
-    cursor.execute("""
-        INSERT INTO personel (first_name, last_name, age, email, phone_number, expertise_status)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        fake.first_name(),
-        fake.last_name(),
-        random.randint(20, 60),
-        fake.email(),
-        fake.phone_number(),
-        random.choice(levels)
-    ))
-    personel_ids.append(cursor.lastrowid)
+
 
 # === 5. Artists ===
 artist_ids = []
@@ -184,7 +169,7 @@ for group_id in group_ids:
 
 # === Events: για κάθε μέρα του φεστιβάλ (0 έως duration - 1) ===
 event_ids = []
-
+event_capacities = []
 for fid in festival_ids:
     # Fetch festival's duration and starting date
     cursor.execute("SELECT duration, starting_date FROM festival WHERE festival_ID = %s", (fid,))
@@ -202,20 +187,46 @@ for fid in festival_ids:
                 # Combine the date and time
                 start_datetime = datetime.combine(starting_date, datetime.strptime(start_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
                 end_datetime = datetime.combine(starting_date, datetime.strptime(end_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
-
+                vip_total = random.randint(5, 10)
+                backstage_total = random.randint(5, 10)
+                general_total = random.randint(80, 100)
                 # Insert event into the events table
                 cursor.execute("""
-                    INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID, VIP_total, backstage_total, general_total)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     fid,
                     f"{fake.word().capitalize()} Concert",
                     festival_day,
                     start_datetime,
                     end_datetime,
-                    building_id
+                    building_id,
+                    vip_total,
+                    backstage_total,
+                    general_total
                 ))
                 event_ids.append(cursor.lastrowid)
+                event_capacities.append(vip_total + backstage_total + general_total)
+
+# === 4. Personel ===
+personel_ids = []
+levels = ['intern', 'beginer', 'intermidiate', 'experienced', 'very_experienced']
+for _ in range(200):
+    cursor.execute("""
+        INSERT INTO personel (first_name, last_name, age, email, phone_number, expertise_status)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (
+        fake.first_name(),
+        fake.last_name(),
+        random.randint(20, 60),
+        fake.email(),
+        fake.phone_number(),
+        random.choice(levels)
+    ))
+    personel_ids.append(cursor.lastrowid)
+
+
+
 
 def timedelta_to_str(t):
     total_seconds = int(t.total_seconds())
@@ -279,19 +290,47 @@ roles = ['technical', 'security', 'support']
 personel_event_roles = set()
 
 for eid in event_ids:
-    involved = random.sample(personel_ids, k=random.randint(10, 20))
+    # Υπολόγισε συνολικό κοινό για το event
+    cursor.execute("""
+        SELECT (VIP_total + backstage_total + general_total)
+        FROM events WHERE event_ID = %s
+    """, (eid,))
+    total_capacity = cursor.fetchone()[0]
+    
+    needed_security = int(total_capacity * 0.05 +0.5)
+    needed_support = int(total_capacity * 0.02+ 0.5)
+
+    # Επιλέγουμε άτομα (με τουλάχιστον όσους χρειαζόμαστε)
+    involved = random.sample(personel_ids, k=max(10, needed_security + needed_support + 5))
+    assigned = 0
+
     for pid in involved:
-        if (pid, eid) not in personel_event_roles:
-            role = random.choice(roles)
+        if assigned < needed_security:
+            role = 'security'
+        elif assigned < needed_security + needed_support:
+            role = 'support'
+        else:
+            role = 'technical'
+        new_pid = pid
+        while True:
             try:
-                cursor.execute("""
-                    INSERT IGNORE INTO role_of_personel_on_event (personel_ID, event_ID, role)
-                    VALUES (%s, %s, %s)
-                """, (pid, eid, role))
-                personel_event_roles.add((pid, eid))
+                if (new_pid, eid) not in personel_event_roles:
+                    cursor.execute("""
+                        INSERT IGNORE INTO role_of_personel_on_event (personel_ID, event_ID, role)
+                        VALUES (%s, %s, %s)
+                    """, (new_pid, eid, role))
+                    personel_event_roles.add((new_pid, eid))
+                    assigned += 1
+                    break
+                else:
+                    new_pid = random.choice(list(set(personel_ids) - set(involved) - {p for (p, e) in personel_event_roles if e == eid}))
             except:
                 print("shit3 happened")
+                new_pid = random.choice(list(set(personel_ids) - set(involved) - {p for (p, e) in personel_event_roles if e == eid}))
+
             
+
+
 
 
 # Commit all changes

@@ -1,4 +1,4 @@
 genre1	genre2	appearances
-Classical	Pop	9
-Classical	Jazz	8
-Classical	Hip-Hop	6
+Electronic	Hip-Hop	8
+Electronic	Pop	7
+Pop	Rock	7

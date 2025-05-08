@@ -1,13 +1,19 @@
 artist_ID	artist_name	genre_name	has_participated
-6	Blake King	Rock	no
-38	Christopher Alexander	Rock	no
-5	Crystal Simmons	Rock	no
-43	Douglas Rhodes	Rock	no
-33	Hailey Stewart	Rock	no
-34	James Burns	Rock	no
-24	Jennifer Alvarado	Rock	no
-36	Margaret Williams	Rock	no
-1	Patrick Pace	Rock	no
-31	Stacey Lewis	Rock	no
-25	William Oneal	Rock	no
-28	William Smith	Rock	yes
+47	Brandon Garcia	Rock	no
+34	Brent Sullivan	Rock	no
+1	Brittany Santiago	Rock	no
+8	Chad Peterson	Rock	no
+7	Gabriel Smith	Rock	no
+9	Gina Wood	Rock	no
+26	Ian Scott	Rock	no
+4	Janet Phillips	Rock	no
+3	Karen Morgan	Rock	no
+48	Kenneth Rodriguez	Rock	no
+2	Kevin Rosales	Rock	no
+49	Lisa Bean	Rock	no
+41	Lisa Williams	Rock	no
+17	Martin Haynes MD	Rock	no
+28	Miss Jamie Rodriguez	Rock	no
+14	Natalie Hester	Rock	no
+10	Nicole Irwin	Rock	no
+16	Sarah Caldwell	Rock	no
