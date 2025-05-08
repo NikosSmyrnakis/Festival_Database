@@ -250,7 +250,7 @@ CREATE TABLE temp_resale_matches (
 
 
 -- === INDEXES === ---
-
+-- nikos
 CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID);
 CREATE INDEX idx_artist_name ON artist(artist_name);
 CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID);
@@ -264,6 +264,15 @@ CREATE INDEX idx_genre_group ON genre(group_ID);
 CREATE INDEX idx_role_event_role ON role_of_personel_on_event(event_ID, role);
 CREATE INDEX idx_group_members_artist ON group_members(artist_ID);
 CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name);
+-- marina 
+CREATE INDEX idx_ticket_purchase_year_price ON ticket(purchase_date, purchase_price);
+CREATE INDEX idx_perf_type_artist_event ON performances(performance_type, artist_ID, event_ID);
+CREATE INDEX idx_artist_dob ON artist(artist_date_of_birth);
+CREATE INDEX idx_role_event_role_personel ON role_of_personel_on_event(role, personel_ID, event_ID);
+CREATE INDEX idx_personel_expertise ON personel(expertise_status);
+CREATE INDEX idx_events_start_time ON events(event_start_time);
+CREATE INDEX idx_festival_location_continent ON festival_location(festival_ID, continent);
+
 
 --- === TRIGGERS === ---
 -- update barcode after inserting a new ticket
@@ -944,9 +953,57 @@ BEGIN
 END $$
 
 DELIMITER ;
+/*
+DELIMITER $$
 
+CREATE TRIGGER trg_check_soldout_before_resale
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE event_id_val INT;
+    DECLARE ticket_type_val ENUM('general_admission', 'VIP', 'backstage');
+    DECLARE total_available INT;
+    DECLARE sold_count INT;
+    DECLARE msg_text VARCHAR(255); -- 🟢 μεταφέρθηκε εδώ!
 
+    -- Περίπτωση 1 ή 2: Έχουμε ticket_ID → παίρνουμε ticket_type & event_ID
+    IF NEW.ticket_ID IS NOT NULL THEN
+        SELECT ticket_type, event_ID INTO ticket_type_val, event_id_val
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+    
+    -- Περίπτωση 3: Δεν έχουμε ticket_ID → μπλοκάρουμε την εισαγωγή
+    ELSE
+        SET msg_text = 'Cannot verify sold-out status without a ticket_ID.';
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = msg_text;
+    END IF;
 
+    -- Πάρε τον συνολικό αριθμό εισιτηρίων για αυτόν τον τύπο και event
+    IF ticket_type_val = 'VIP' THEN
+        SELECT VIP_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSEIF ticket_type_val = 'backstage' THEN
+        SELECT backstage_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSE
+        SELECT general_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    END IF;
+
+    -- Μέτρα πόσα έχουν πουληθεί ήδη
+    SELECT COUNT(*) INTO sold_count
+    FROM ticket
+    WHERE event_ID = event_id_val AND ticket_type = ticket_type_val;
+
+    -- Αν δεν έχουν εξαντληθεί, μπλόκαρε
+    IF sold_count < total_available THEN
+        SET msg_text = CONCAT('Resale not allowed: ', ticket_type_val, ' tickets are not sold out yet.');
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = msg_text;
+    END IF;
+END$$
+
+DELIMITER ;
+
+*/
 
 --- === CONSTRAINTS === ---
 --- Resale Constraints ---
