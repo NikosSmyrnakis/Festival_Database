@@ -1,19 +1,18 @@
 artist_ID	artist_name	genre_name	has_participated
-47	Brandon Garcia	Rock	no
-34	Brent Sullivan	Rock	no
-1	Brittany Santiago	Rock	no
-8	Chad Peterson	Rock	no
-7	Gabriel Smith	Rock	no
-9	Gina Wood	Rock	no
-26	Ian Scott	Rock	no
-4	Janet Phillips	Rock	no
-3	Karen Morgan	Rock	no
-48	Kenneth Rodriguez	Rock	no
-2	Kevin Rosales	Rock	no
-49	Lisa Bean	Rock	no
-41	Lisa Williams	Rock	no
-17	Martin Haynes MD	Rock	no
-28	Miss Jamie Rodriguez	Rock	no
-14	Natalie Hester	Rock	no
-10	Nicole Irwin	Rock	no
-16	Sarah Caldwell	Rock	no
+39	Angela Arroyo	Rock	no
+47	Barbara Weber	Rock	no
+37	Cassandra Holland	Rock	no
+19	Christina Garza	Rock	no
+26	Courtney White	Rock	no
+38	Derrick Wolfe	Rock	no
+5	Donna Ray	Rock	yes
+22	Douglas Castro	Rock	no
+14	Elizabeth Greene	Rock	yes
+50	Gregory Walker	Rock	no
+20	Heather Kaufman	Rock	no
+28	Jason Murillo	Rock	no
+49	Kevin Ferguson	Rock	no
+15	Matthew Malone	Rock	no
+17	Michael Payne	Rock	no
+31	Ricky Martinez	Rock	no
+40	Thomas Mclean	Rock	yes

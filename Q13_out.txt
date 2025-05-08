@@ -1,4 +1,3 @@
 artist_ID	artist_name	continent_count
-19	Lisa Burns	3
-21	Mark Daniels	3
-50	Carmen Campos	3
+53	Ed Sheeran	10
+54	Tina Turner	8

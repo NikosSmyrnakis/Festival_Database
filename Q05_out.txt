@@ -1,6 +1,6 @@
 artist_ID	artist_name	age	festival_participations
-50	Carmen Campos	24	3
-34	Brent Sullivan	28	3
-43	Donald Key	21	2
-20	Robert Berry	25	2
-23	Ana Terry	28	2
+27	Michelle Smith	26	3
+38	Derrick Wolfe	24	3
+10	Harold Davis	21	3
+22	Douglas Castro	22	2
+2	Kim Phillips	20	2

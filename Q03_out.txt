@@ -1,0 +1,14 @@
+artist_ID	artist_name	festival_ID	warm_up_count
+53	Ed Sheeran	20	3
+53	Ed Sheeran	12	3
+53	Ed Sheeran	16	3
+52	Kendrick Lamar	13	3
+53	Ed Sheeran	17	3
+53	Ed Sheeran	13	3
+51	Adele Adkins	11	3
+53	Ed Sheeran	18	3
+53	Ed Sheeran	11	3
+53	Ed Sheeran	14	3
+53	Ed Sheeran	19	3
+52	Kendrick Lamar	12	3
+53	Ed Sheeran	15	3
