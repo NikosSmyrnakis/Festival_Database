@@ -4,6 +4,7 @@
     FROM
         ticket
     WHERE
+        purchase_price IS NOT NULL
     GROUP BY
         festival_year
     ORDER BY
