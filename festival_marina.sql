@@ -117,7 +117,6 @@ CREATE TABLE events (
     ) STORED,
     FOREIGN KEY (building_ID) REFERENCES building(building_ID),
     FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID), -- ,
-    is_soldout BOOLEAN DEFAULT FALSE,
     VIP_total INT, 
     backstage_total INT,
     general_total INT
@@ -983,7 +982,30 @@ BEGIN
     DECLARE sold_count INT;
     DECLARE msg_text VARCHAR(255);
 
-    -- Πάρε τον συνολικό αριθμό εισιτηρίων για αυτόν τον τύπο και event
+    -- Περίπτωση 1: υπάρχει ticket_ID → πάρε event_ID και ticket_type από τον πίνακα ticket
+    IF NEW.ticket_ID IS NOT NULL THEN
+        SELECT event_ID, ticket_type
+        INTO event_id_val, ticket_type_val
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+
+    -- Περίπτωση 2: δεν υπάρχει ticket_ID αλλά υπάρχει event_name και ticket_type
+    ELSEIF NEW.event_name IS NOT NULL AND NEW.ticket_type IS NOT NULL THEN
+        SELECT event_ID
+        INTO event_id_val
+        FROM events
+        WHERE event_name = NEW.event_name
+        LIMIT 1;  -- για ασφάλεια σε διπλότυπα ονόματα
+
+        SET ticket_type_val = NEW.ticket_type;
+
+    -- Περίπτωση 3: δεν υπάρχουν αρκετά στοιχεία για έλεγχο
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Not enough information to check resale availability.';
+    END IF;
+
+    -- Ανάλογα με τον τύπο εισιτηρίου, βρες το σύνολο διαθέσιμων
     IF ticket_type_val = 'VIP' THEN
         SELECT VIP_total INTO total_available FROM events WHERE event_ID = event_id_val;
     ELSEIF ticket_type_val = 'backstage' THEN
@@ -992,17 +1014,18 @@ BEGIN
         SELECT general_total INTO total_available FROM events WHERE event_ID = event_id_val;
     END IF;
 
-    -- Μέτρα πόσα έχουν πουληθεί ήδη
+    -- Πόσα έχουν πουληθεί για το event και τον τύπο
     SELECT COUNT(*) INTO sold_count
     FROM ticket
     WHERE event_ID = event_id_val AND ticket_type = ticket_type_val;
 
-    -- Αν δεν έχουν εξαντληθεί, μπλόκαρε
+    -- Έλεγχος αν επιτρέπεται το resale
     IF sold_count < total_available THEN
         SET msg_text = CONCAT('Resale not allowed: ', ticket_type_val, ' tickets are not sold out yet.');
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = msg_text;
     END IF;
+
 END$$
 
 DELIMITER ;
