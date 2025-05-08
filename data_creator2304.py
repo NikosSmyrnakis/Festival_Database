@@ -87,16 +87,30 @@ for fid in festival_ids:
 building_ids = []
 for _ in range(30):
     cursor.execute("""
-        INSERT INTO building (building_name, building_description, max_capacity, technical_equipment)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO building (building_name, building_description, max_capacity)
+        VALUES (%s, %s, %s)
     """, (
         fake.company(),
         fake.text(),
-        random.randint(100, 1000),
-        ', '.join(fake.words(nb=5))
+        random.randint(100, 1000)
     ))
     building_ids.append(cursor.lastrowid)
+#        ', '.join(fake.words(nb=5))
 
+#=== Technical equipment ===
+equipments = ['Speaker', 'Light', 'Microphone', 'Console', 'Special effect']
+equipment_ids = []
+for building_id in building_ids:
+    for _ in range(random.randint(5, 15)):
+        cursor.execute("""
+            INSERT INTO technical_equipment (building_ID, equipment_name, equipment_description)
+            VALUES (%s, %s, %s)
+        """, (
+            building_id,
+            random.choice(equipments),
+            fake.text(random.randint(120, 200))
+        ))
+        equipment_ids.append(cursor.lastrowid)
 
 
 # === 5. Artists ===

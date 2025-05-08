@@ -39,10 +39,16 @@ CREATE TABLE building (
     building_ID INT PRIMARY KEY AUTO_INCREMENT,
     building_name VARCHAR(255) NOT NULL,
     building_description TEXT NOT NULL,
-    max_capacity INT NOT NULL,
-    technical_equipment VARCHAR(25500) NOT NULL
+    max_capacity INT NOT NULL
 );
 
+CREATE TABLE technical_equipment (
+    techhnical_equipment_ID INT PRIMARY KEY AUTO_INCREMENT,
+    building_ID INT,
+    equipment_name VARCHAR(255) NOT NULL,
+    equipment_description TEXT NOT NULL,
+    FOREIGN KEY (building_ID) REFERENCES building(building_ID)
+);
 -- Artist
 -- Stores artist profiles and metadata
 CREATE TABLE artist (
