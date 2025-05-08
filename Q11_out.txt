@@ -1,16 +1,11 @@
 artist_ID	artist_name	participation_count
-21	Kimberly Chavez	4
 6	Paul Stewart	4
-39	Erika Wyatt	3
+21	Kimberly Chavez	4
 48	Carrie Rhodes	3
 8	Elizabeth Stein	3
 29	John Kent	3
 35	Derrick Garza	3
-18	Shane Goodman	2
-37	Matthew Simmons	2
-19	Timothy Estes	2
-2	Rachel Bowen	2
-42	Paul Webb	2
+39	Erika Wyatt	3
 4	Daniel Peterson	2
 5	Michelle Gibson	2
 24	Debra Tran	2
@@ -22,8 +17,11 @@ artist_ID	artist_name	participation_count
 15	Cheryl Jackson	2
 32	Nicole Mendez	2
 17	Katrina Acevedo	2
-38	Christian Wilson	1
-20	Dr. Chris Bishop	1
+18	Shane Goodman	2
+37	Matthew Simmons	2
+19	Timothy Estes	2
+2	Rachel Bowen	2
+42	Paul Webb	2
 22	Henry Day	1
 44	Sarah Jones	1
 23	Whitney Pruitt	1
@@ -36,3 +34,5 @@ artist_ID	artist_name	participation_count
 31	Dylan Wright	1
 16	Kimberly Henson	1
 36	Scott Martinez	1
+38	Christian Wilson	1
+20	Dr. Chris Bishop	1

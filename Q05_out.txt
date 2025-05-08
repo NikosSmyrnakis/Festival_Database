@@ -3,4 +3,4 @@ artist_ID	artist_name	age	festival_participations
 29	John Kent	22	3
 39	Erika Wyatt	22	3
 48	Carrie Rhodes	26	3
-24	Debra Tran	29	2
+32	Nicole Mendez	25	2

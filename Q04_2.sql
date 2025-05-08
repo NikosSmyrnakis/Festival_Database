@@ -18,7 +18,7 @@ WHERE
         FROM
             artist FORCE INDEX (idx_artist_name)
         WHERE
-            artist_name = 'Jason Murillo'
+            artist_name = 'Shari Cox'
     )
     AND r.artist_performance IS NOT NULL
     AND r.overall_impression IS NOT NULL
@@ -48,8 +48,8 @@ WHERE
         FROM
             artist IGNORE INDEX (idx_artist_name)
         WHERE
-            artist_name = 'Jason Murillo'
+            artist_name = 'Shari Cox'
     )
 GROUP BY
     a.artist_name;
--- Kim Phillips
+-- John Kent

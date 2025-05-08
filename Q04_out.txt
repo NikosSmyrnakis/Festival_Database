@@ -1,0 +1,2 @@
+artist_name	avg_artist_performance	avg_overall_impression
+Shari Cox	4.00	2.00

@@ -16,10 +16,10 @@ WHERE
         FROM
             artist
         WHERE
-            artist_name = 'Jason Murillo'
+            artist_name = 'Shari Cox'
     )
     AND r.artist_performance IS NOT NULL
     AND r.overall_impression IS NOT NULL
 GROUP BY
     a.artist_name;
--- Kim Phillips
+-- John Kent
