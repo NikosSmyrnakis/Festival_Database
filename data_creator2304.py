@@ -67,6 +67,8 @@ for year in range(2017, 2027):
 
 
 # === 2. Festival Locations ===
+continents = ['Europe', 'North America', 'South America']
+i = 0
 for fid in festival_ids:
     cursor.execute("""
         INSERT INTO festival_location (festival_ID, address, town, country, continent, geo_coordinates)
@@ -76,9 +78,10 @@ for fid in festival_ids:
         fake.street_address(),
         fake.city(),
         fake.country(),
-        'Europe',
+        continents[i%3],
         f"{fake.latitude()},{fake.longitude()}"
     ))
+    i+=1
 
 # === 3. Buildings ===
 building_ids = []
@@ -97,7 +100,7 @@ for _ in range(30):
 # === 4. Personel ===
 personel_ids = []
 levels = ['intern', 'beginer', 'intermidiate', 'experienced', 'very_experienced']
-for _ in range(10):
+for _ in range(100):
     cursor.execute("""
         INSERT INTO personel (first_name, last_name, age, email, phone_number, expertise_status)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -272,16 +275,16 @@ for eid in event_ids:
 
 
 # === 8. Role of Personel on Event (many-to-many) ===
-roles = ['techincal', 'security', 'support']
+roles = ['technical', 'security', 'support']
 personel_event_roles = set()
 
 for eid in event_ids:
-    involved = random.sample(personel_ids, k=random.randint(2, 4))
+    involved = random.sample(personel_ids, k=random.randint(10, 20))
     for pid in involved:
         if (pid, eid) not in personel_event_roles:
             role = random.choice(roles)
             cursor.execute("""
-                INSERT INTO role_of_personel_on_event (personel_ID, event_ID, role)
+                INSERT IGNORE INTO role_of_personel_on_event (personel_ID, event_ID, role)
                 VALUES (%s, %s, %s)
             """, (pid, eid, role))
             personel_event_roles.add((pid, eid))
@@ -379,12 +382,15 @@ for pid in performance_ids:
             violation = is_violation_of_3_consecutive_years(years, festival_year)
 
             if not conflict and not violation:
-                cursor.execute("""
-                        UPDATE performances
-                        SET artist_ID = %s
-                        WHERE performance_ID = %s
-                    """, (aid, pid))
-                break
+                try:
+                    cursor.execute("""
+                            UPDATE performances
+                            SET artist_ID = %s
+                            WHERE performance_ID = %s
+                        """, (aid, pid))
+                    break
+                except:
+                    pass
         
         else:
             # Randomly select a group ID
@@ -418,12 +424,15 @@ for pid in performance_ids:
 
 
             if not conflict and not violation:
-                cursor.execute("""
-                        UPDATE performances
-                        SET group_ID = %s
-                        WHERE performance_ID = %s
-                    """, (gid, pid))
-                break
+                try:
+                    cursor.execute("""
+                            UPDATE performances
+                            SET group_ID = %s
+                            WHERE performance_ID = %s
+                        """, (gid, pid))
+                    break
+                except:
+                    pass
 
 # === group_members ===
 group_members_ids = []
@@ -475,6 +484,14 @@ def random_ticket_date(event_id):
         return date_before, activate_status
 
 # === 12. Tickets ===
+def calculate_ean13(ticket_id: int) -> str:
+    base_code = str(ticket_id).zfill(12)
+    sum_even = sum(int(base_code[i]) for i in range(1, 12, 2))
+    sum_odd = sum(int(base_code[i]) for i in range(0, 12, 2))
+    total_sum = sum_odd + (sum_even * 3)
+    check_digit = (10 - (total_sum % 10)) % 10
+    return base_code + str(check_digit)
+
 ticket_ids = []
 ticket_types = ['general_admission', 'VIP', 'backstage']
 payment_methods = ['debit_card', 'credit_card', 'I-BAN']
@@ -521,9 +538,12 @@ for _ in range(220):
         purchase_date,
         round(random.uniform(20.0, 100.0), 2),
         random.choice(payment_methods),
-        activated_ticket
+        activated_ticket,
     ))
     ticket_ids.append([cursor.lastrowid, event_id, visitor_id, ticket_type, activated_ticket])
+    barcode = calculate_ean13(ticket_ids[-1][0])
+
+    cursor.execute("UPDATE ticket SET barcode = %s WHERE ticket_ID = %s", (barcode, ticket_ids[-1][0]))
 
 
 
@@ -656,185 +676,6 @@ for ticket_id, event_id in active_tickets:
             str(random.randint(1, 5))
         ))
 #Query 7 not empty set by marina
-# 1. Εισαγωγή 3 τεχνικών
-technical_people = [
-    ("Alex", "Smith", 30, "alex@example.com", "698000001", "experienced"),
-    ("Maria", "Papadopoulou", 28, "maria@example.com", "698000002", "very_experienced"),
-    ("Nikos", "Kritikos", 33, "nikos@example.com", "698000003", "intermidiate")
-]
-
-personel_ids = []
-for first_name, last_name, age, email, phone, status in technical_people:
-    cursor.execute("""
-        INSERT INTO personel (first_name, last_name, age, email, phone_number, expertise_status)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (first_name, last_name, age, email, phone, status))
-    personel_ids.append(cursor.lastrowid)
-
-# 2. Βρες 3 διαφορετικά event_IDs (ή λιγότερα αν υπάρχουν μόνο λίγα)
-cursor.execute("SELECT event_ID FROM events LIMIT 3")
-event_ids = [row[0] for row in cursor.fetchall()]
-
-# 3. Αντιστοίχισε κάθε personel σε ένα event ως "technical"
-for i in range(min(len(personel_ids), len(event_ids))):
-    cursor.execute("""
-        INSERT INTO role_of_personel_on_event (personel_ID, event_ID, role)
-        VALUES (%s, %s, 'technical')
-    """, (personel_ids[i], event_ids[i]))
-
-# More data for odd querries by marina
-# === Καλλιτέχνες ===
-artist_data = [
-    ("Adele Adkins", "Adele", "1988-05-05"),
-    ("Kendrick Lamar", "K.Dot", "1987-06-17"),
-    ("Ed Sheeran", "Teddy", "1991-02-17")
-]
-
-artist_ids = []
-for name, stage_name, birthdate in artist_data:
-    cursor.execute("""
-        INSERT INTO artist (artist_name, stage_name, artist_date_of_birth, artist_website, artist_instagram, artist_debute)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        name,
-        stage_name,
-        birthdate,
-        f"https://{stage_name.lower()}.com",
-        f"https://instagram.com/{stage_name.lower()}",
-        '2010-01-01'
-    ))
-    artist_ids.append(cursor.lastrowid)
-
-# === Δημιουργία 10 φεστιβάλ σε διαφορετικές ηπείρους ===
-continents = [
-    ("Europe", "Berlin", "Germany"),
-    ("Asia", "Tokyo", "Japan"),
-    ("America", "New York", "USA"),
-    ("Africa", "Cape Town", "South Africa"),
-    ("Oceania", "Sydney", "Australia"),
-    ("Antarctica", "McMurdo", "Antarctica"),
-    ("South America", "São Paulo", "Brazil"),
-    ("Australia", "Melbourne", "Australia"),
-    ("North America", "Toronto", "Canada"),
-    ("Middle East", "Dubai", "UAE")
-]
-
-festival_ids = []
-for i in range(10):
-    city = continents[i][1]
-    country = continents[i][2]
-    continent = continents[i][0]
-
-    cursor.execute("INSERT INTO festival (starting_date, duration) VALUES (%s, %s)", 
-                   (datetime(2020+i, 7, 10).date(), 3))
-    fid = cursor.lastrowid
-    festival_ids.append(fid)
-
-    cursor.execute("""
-        INSERT INTO festival_location (festival_ID, address, town, country, continent, geo_coordinates)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        fid,
-        f"{i+10} Main St",
-        city,
-        country,
-        continent,
-        f"{-33.0 + i},{151.0 + i}"  # fake geo coords
-    ))
-
-# === Κτίριο ===
-cursor.execute("""
-    INSERT INTO building (building_name, building_description, max_capacity, technical_equipment)
-    VALUES ('Global Stage', 'Multi-purpose performance venue', 500, 'sound,lighting,video')
-""")
-building_id = cursor.lastrowid
-
-# === Αντιστοιχίσεις ===
-artist_festival_map = {
-    artist_ids[0]: [festival_ids[0]],                      # Adele - 1 φεστιβάλ
-    artist_ids[1]: [festival_ids[1], festival_ids[2]],     # Kendrick - 2 φεστιβάλ
-    artist_ids[2]: festival_ids                            # Ed - 10 φεστιβάλ
-}
-
-# === Events & Performances ===
-for artist_id, fids in artist_festival_map.items():
-    for fid in fids:
-        event_start = datetime(2025, 8, 1, 18, 0, 0)
-        event_end = event_start + timedelta(hours=3)
-        cursor.execute("""
-            INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (
-            fid,
-            f"Live Session {fid}",
-            1,
-            event_start,
-            event_end,
-            building_id
-        ))
-        event_id = cursor.lastrowid
-
-        # 3 warm-up performances
-        for i in range(3):
-            start = event_start + timedelta(minutes=i * 30)
-            end = start + timedelta(minutes=25)
-            cursor.execute("""
-                INSERT INTO performances (event_ID, performance_type, performance_start_time, performance_end_time, 
-                                          building_ID, building_name, artist_ID)
-                VALUES (%s, 'warm up', %s, %s, %s, %s, %s)
-            """, (
-                event_id,
-                start,
-                end,
-                building_id,
-                'Global Stage',
-                artist_id
-            ))
-# === Καλλιτέχνης με 8 συμμετοχές (για να πιάσει το -5 από Ed που έχει 10) ===
-cursor.execute("""
-    INSERT INTO artist (artist_name, stage_name, artist_date_of_birth, artist_website, artist_instagram, artist_debute)
-    VALUES (%s, %s, %s, %s, %s, %s)
-""", (
-    "Tina Turner",
-    "Tina",
-    "1970-11-26",
-    "https://tina.com",
-    "https://instagram.com/tina",
-    '1990-01-01'
-))
-tina_id = cursor.lastrowid
-
-# Δώσε της 8 συμμετοχές σε ξεχωριστά φεστιβάλ
-for fid in festival_ids[:8]:  # <= 8 φεστιβάλ
-    event_start = datetime(2025, 9, 1, 19, 0, 0)
-    event_end = event_start + timedelta(hours=2)
-    cursor.execute("""
-        INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        fid,
-        f"Tina Live {fid}",
-        1,
-        event_start,
-        event_end,
-        building_id
-    ))
-    event_id = cursor.lastrowid
-
-    # 1 performance τύπου warm up
-    cursor.execute("""
-        INSERT INTO performances (event_ID, performance_type, performance_start_time, performance_end_time, 
-                                  building_ID, building_name, artist_ID)
-        VALUES (%s, 'warm up', %s, %s, %s, %s, %s)
-    """, (
-        event_id,
-        event_start,
-        event_start + timedelta(minutes=40),
-        building_id,
-        'Global Stage',
-        tina_id
-    ))
-
 
 # 4. Commit για να αποθηκευτούν οι αλλαγές
 conn.commit()
