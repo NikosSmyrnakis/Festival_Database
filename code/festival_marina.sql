@@ -194,20 +194,18 @@ CREATE TABLE ticket (
 -- Buyer
 -- Represents users interested in buying tickets
 CREATE TABLE buyer (
-    buyer_ID INT AUTO_INCREMENT PRIMARY KEY,
+    buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
     visitor_ID INT,
-    pending_orders_buyer INT DEFAULT 0,         -- number of pending orders
-    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
+    FOREIGN KEY (buyer_ID) REFERENCES visitor(visitor_ID)
 );
 
 
 -- Seller
 -- Represents users who are selling or listing tickets for resale
 CREATE TABLE seller (
-    seller_ID INT AUTO_INCREMENT PRIMARY KEY,
+    seller_ID INT PRIMARY KEY AUTO_INCREMENT,
     visitor_ID INT,
-    pending_orders_seller INT DEFAULT 0,         -- number of pending orders
-    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
+    FOREIGN KEY (seller_ID) REFERENCES visitor(visitor_ID)
 );
 
 -- Resale Queue (FIFO)
@@ -437,7 +435,7 @@ DELIMITER ;
 
 --- Visitor Trigger 2 --- 
 -- When a new visitor is created, create a corresponding buyer entry
--- with the same visitor_ID and default pending_orders_buyer = 0
+-- with the same visitor_ID
 -- This is to ensure that every visitor can be a buyer or seller
 -- without needing to create a new entry in the buyer table
 
@@ -446,8 +444,8 @@ CREATE TRIGGER create_buyer_after_visitor
 AFTER INSERT ON visitor
 FOR EACH ROW
 BEGIN
-    INSERT INTO buyer (visitor_ID, pending_orders_buyer)
-    VALUES (NEW.visitor_ID, 0);
+    INSERT INTO buyer (visitor_ID)
+    VALUES (NEW.visitor_ID);
 END$$
 DELIMITER ;
 

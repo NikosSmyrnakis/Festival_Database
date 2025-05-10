@@ -665,10 +665,10 @@ for ticket in random.sample(ticket_ids, k=200):
                 INSERT INTO resale_queue (ticket_ID, seller_ID, event_name, ticket_type, listed_at)
                 VALUES (%s, %s, %s, %s, %s)
              """, (ticket_id, visitor_id, event_name, ticket_type, date_before))
-            cursor.execute("""
-                UPDATE seller SET pending_orders_seller = pending_orders_seller + 1
-                WHERE visitor_ID = %s
-            """, (visitor_id,))
+            #cursor.execute("""
+            #    UPDATE seller SET pending_orders_seller = pending_orders_seller + 1
+            #    WHERE visitor_ID = %s
+            #""", (visitor_id,))
             sellers_t_ids.append(ticket_id)
         else:
             #if buyer
@@ -685,10 +685,10 @@ for ticket in random.sample(ticket_ids, k=200):
                 """, (temp_id,visitor_id, date_before))
                 sellers_t_ids.remove(temp_id)
                 k-= 1
-            cursor.execute("""
-                UPDATE buyer SET pending_orders_buyer = pending_orders_buyer + 1
-                WHERE visitor_ID = %s
-            """, (visitor_id,))
+            #cursor.execute("""
+            #    UPDATE buyer SET pending_orders_buyer = pending_orders_buyer + 1
+            #    WHERE visitor_ID = %s
+            #""", (visitor_id,))
 
 
 
