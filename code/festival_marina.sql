@@ -451,7 +451,7 @@ DELIMITER ;
 
 --- Visitor Trigger 3 ---
 -- When a new visitor is created, create a corresponding seller entry
--- with the same visitor_ID and default pending_orders_seller = 0
+-- with the same visitor_ID
 -- This is to ensure that every visitor can be a buyer or seller
 -- without needing to create a new entry in the seller table
 
@@ -733,6 +733,67 @@ DELIMITER ;
 DELIMITER $$
 
 CREATE TRIGGER trg_check_consecutive_years_groups
+
+BEFORE INSERT ON performances
+FOR EACH ROW
+BEGIN
+    DECLARE fest_year INT;
+    DECLARE found_current_festival INT DEFAULT 0;
+    DECLARE prev_year_exists INT DEFAULT 0;
+    DECLARE curr_num INT DEFAULT 0;
+
+    IF NEW.group_ID IS NOT NULL THEN
+
+        -- Πάρε τη χρονιά του φεστιβάλ μέσω του event_ID -> festival_ID
+        SELECT YEAR(f.starting_date) INTO fest_year
+        FROM events e
+        JOIN festival f ON e.festival_ID = f.festival_ID
+        WHERE e.event_ID = NEW.event_ID;
+
+        -- Ελέγχει αν συμμετέχει ήδη φέτος
+        SELECT COUNT(*) INTO found_current_festival
+        FROM performances p
+        JOIN events e ON p.event_ID = e.event_ID
+        WHERE p.group_ID = NEW.group_ID
+          AND YEAR((SELECT starting_date FROM festival WHERE festival_ID = e.festival_ID)) = fest_year;
+
+        IF found_current_festival = 0 THEN
+
+            -- Έλεγξε συμμετοχή το προηγούμενο έτος
+            SELECT COUNT(*) INTO prev_year_exists
+            FROM performances p
+            JOIN events e ON p.event_ID = e.event_ID
+            WHERE p.group_ID = NEW.group_ID
+              AND YEAR((SELECT starting_date FROM festival WHERE festival_ID = e.festival_ID)) = fest_year - 1;
+
+            IF prev_year_exists > 0 THEN
+                SELECT num_of_consecutive_years_participating INTO curr_num
+                FROM `group`
+                WHERE group_ID = NEW.group_ID;
+
+                IF curr_num >= 3 THEN
+                    SIGNAL SQLSTATE '45001'
+                    SET MESSAGE_TEXT = 'The group cannot participate in more than 3 consecutive years.';
+                ELSE
+                    UPDATE `group`
+                    SET num_of_consecutive_years_participating = curr_num + 1
+                    WHERE group_ID = NEW.group_ID;
+                END IF;
+            ELSE
+                -- Reset if skipped a year
+                UPDATE `group`
+                SET num_of_consecutive_years_participating = 1
+                WHERE group_ID = NEW.group_ID;
+            END IF;
+
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
+/*
+
 BEFORE INSERT ON performances
 FOR EACH ROW
 BEGIN
@@ -813,7 +874,7 @@ BEGIN
 END$$
 
 DELIMITER ;
-
+*/
 
 
 --- Performance Trigger 5 ---
