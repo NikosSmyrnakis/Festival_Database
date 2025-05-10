@@ -135,7 +135,8 @@ CREATE TABLE performances (
             WHEN performance_end_time >= performance_start_time THEN TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time)
             ELSE TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time) + 1440
         END     
-    ) STORED,    building_ID INT NOT NULL,
+    ) STORED,    
+    building_ID INT NOT NULL,
     building_name VARCHAR(255) NOT NULL,
     artist_ID INT DEFAULT NULL,
     group_ID INT DEFAULT NULL,
@@ -181,21 +182,14 @@ CREATE TABLE ticket (
     purchase_date DATE,
     purchase_price DECIMAL(10, 2),
     payment_method ENUM('debit_card', 'credit_card', 'I-BAN'),
-    activated_status BOOLEAN DEFAULT FALSE
+    activated_status BOOLEAN DEFAULT FALSE,
+    visitor_name VARCHAR(100),
+    visitor_last_name VARCHAR(100),
+    visitor_email VARCHAR(100),
+    visitor_telephone VARCHAR(20),
+    visitor_age INT
 );
 
--- Resale Queue (FIFO)
--- A queue for tickets listed for resale, based on timestamp
-CREATE TABLE resale_queue (
-    resale_ID INT AUTO_INCREMENT PRIMARY KEY,
-    buyer_ID INT,
-    seller_ID INT,
-    event_name VARCHAR(255) NULL,
-    ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
-    ticket_ID INT NULL,
-    listed_at TIMESTAMP,
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
-);
 
 -- Buyer
 -- Represents users interested in buying tickets
@@ -216,11 +210,26 @@ CREATE TABLE seller (
     FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
 );
 
+-- Resale Queue (FIFO)
+-- A queue for tickets listed for resale, based on timestamp
+CREATE TABLE resale_queue (
+    resale_ID INT AUTO_INCREMENT PRIMARY KEY,
+    buyer_ID INT,
+    seller_ID INT,
+    event_name VARCHAR(255) NULL,
+    ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
+    ticket_ID INT NULL,
+    listed_at TIMESTAMP ,
+    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
+    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
+    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+);
+
+
 -- Review
 -- Feedback for events by visitors who have activated tickets
 -- (Use a trigger to ensure review is only allowed if ticket is activated)
 CREATE TABLE review (
-   review_ID INT AUTO_INCREMENT PRIMARY KEY,
    ticket_ID INT NOT NULL,
    performance_ID INT NOT NULL,
 
@@ -229,7 +238,7 @@ CREATE TABLE review (
    stage_presence ENUM('1', '2', '3', '4', '5'),
    event_organization ENUM('1', '2', '3', '4', '5'),
    overall_impression ENUM('1', '2', '3', '4', '5'),
-
+   PRIMARY KEY (ticket_ID, performance_ID),
    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID),
    FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
 );
@@ -323,8 +332,8 @@ END$$
 DELIMITER ;
 
 
---- Visitor Triggers --- 
 
+--- Ticket Triggers ---
 --- Ticket Trigger 1 ---
 --- Check if the ticket can be sold based on the event's capacity and ticket type limits
 
@@ -391,9 +400,40 @@ END $$
 
 DELIMITER ;
 
+--- Ticket Trigger 2 ---
+--- When a new ticket is created, fill in visitor data from the visitor table
+DELIMITER $$
+
+CREATE TRIGGER fill_ticket_visitor_data
+BEFORE INSERT ON ticket
+FOR EACH ROW
+BEGIN
+    DECLARE v_name VARCHAR(100);
+    DECLARE v_last_name VARCHAR(100);
+    DECLARE v_email VARCHAR(100);
+    DECLARE v_phone VARCHAR(20);
+    DECLARE v_age INT;
+
+    -- Παίρνουμε τα στοιχεία του επισκέπτη από τον πίνακα visitor
+    SELECT first_name, last_name, email, telephone, age
+    INTO v_name, v_last_name, v_email, v_phone, v_age
+    FROM visitor
+    WHERE visitor_ID = NEW.visitor_ID;
+
+    -- Αναθέτουμε τις τιμές στα αντίστοιχα πεδία του εισιτηρίου
+    SET NEW.visitor_name = v_name;
+    SET NEW.visitor_last_name = v_last_name;
+    SET NEW.visitor_email = v_email;
+    SET NEW.visitor_telephone = v_phone;
+    SET NEW.visitor_age = v_age;
+END$$
+
+DELIMITER ;
 
 
 
+
+--- Visitor Triggers --- 
 
 --- Visitor Trigger 2 --- 
 -- When a new visitor is created, create a corresponding buyer entry
@@ -440,6 +480,12 @@ FOR EACH ROW
 BEGIN
     DECLARE matched_seller INT;
     DECLARE matched_buyer INT;
+    DECLARE v_event_ID INT;
+    DECLARE v_ticket_type ENUM('general_admission', 'VIP', 'backstage');
+    DECLARE v_purchase_date DATE;
+    DECLARE v_price DECIMAL(10,2);
+    DECLARE v_payment_method ENUM('debit_card', 'credit_card', 'I-BAN');
+    DECLARE v_activated BOOLEAN;
     -- If new row is a buyer
     IF NEW.buyer_ID IS NOT NULL THEN
         -- Match με διαθέσιμο seller για ίδιο ticket_ID
@@ -474,8 +520,35 @@ BEGIN
             VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
             -- Διαγραφή των matched εγγραφών από resale_queue
             SET NEW.resale_ID = NULL;
+
+            -- update the ticket table
+
+            -- Get original ticket info
+            SELECT 
+                event_ID, ticket_type, purchase_date, purchase_price, 
+                payment_method, activated_status
+            INTO 
+                v_event_ID, v_ticket_type, v_purchase_date, v_price,
+                v_payment_method, v_activated
+            FROM ticket
+            WHERE ticket_ID = NEW.ticket_ID;
+
+            -- Delete old ticket
+            DELETE FROM ticket WHERE ticket_ID = NEW.ticket_ID;
+
+            -- Insert new ticket with buyer ID
+            INSERT INTO ticket (
+                event_ID, visitor_ID, ticket_type, purchase_date,
+                purchase_price, payment_method, activated_status
+            )
+            VALUES (
+                v_event_ID, matched_buyer, v_ticket_type, v_purchase_date,
+                v_price, v_payment_method, v_activated
+            );
+
         END IF;
     END IF;
+
 END$$
 DELIMITER ;
 
