@@ -200,7 +200,9 @@ CREATE TABLE resale_queue (
     ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
     ticket_ID INT NULL,
     listed_at TIMESTAMP,
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID),
+    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
+    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID)
 );
 
 -- Buyer
