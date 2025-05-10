@@ -190,20 +190,6 @@ CREATE TABLE ticket (
     visitor_age INT
 );
 
--- Resale Queue (FIFO)
--- A queue for tickets listed for resale, based on timestamp
-CREATE TABLE resale_queue (
-    resale_ID INT AUTO_INCREMENT PRIMARY KEY,
-    buyer_ID INT,
-    seller_ID INT,
-    event_name VARCHAR(255) NULL,
-    ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
-    ticket_ID INT NULL,
-    listed_at TIMESTAMP,
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID),
-    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
-    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID)
-);
 
 -- Buyer
 -- Represents users interested in buying tickets
@@ -223,6 +209,22 @@ CREATE TABLE seller (
     pending_orders_seller INT DEFAULT 0,         -- number of pending orders
     FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID)
 );
+
+-- Resale Queue (FIFO)
+-- A queue for tickets listed for resale, based on timestamp
+CREATE TABLE resale_queue (
+    resale_ID INT AUTO_INCREMENT PRIMARY KEY,
+    buyer_ID INT,
+    seller_ID INT,
+    event_name VARCHAR(255) NULL,
+    ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
+    ticket_ID INT NULL,
+    listed_at TIMESTAMP ,
+    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
+    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
+    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+);
+
 
 -- Review
 -- Feedback for events by visitors who have activated tickets
