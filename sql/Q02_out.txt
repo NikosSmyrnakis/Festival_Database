@@ -1,0 +1,14 @@
+artist_ID	artist_name	genre_name	has_participated
+40	Carlos Garcia	Rock	no
+32	Denise Olson	Rock	no
+21	Dustin Lawrence	Rock	no
+7	Jennifer Klein	Rock	no
+6	Jill Welch	Rock	no
+49	Jordan Sawyer	Rock	no
+12	Katie Craig	Rock	no
+34	Kristina Bennett	Rock	no
+5	Mariah Davis	Rock	no
+43	Michael Berger	Rock	no
+35	Nicole Hall	Rock	no
+9	Randy Thornton	Rock	no
+8	Timothy James	Rock	no

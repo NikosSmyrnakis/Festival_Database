@@ -1,0 +1,6 @@
+artist_ID	artist_name	age	festival_participations
+43	Michael Berger	25	3
+1	Paula Ward	20	3
+30	Valerie Barnes	29	2
+36	Ashley Harris	26	2
+14	Mr. William Jones MD	28	2

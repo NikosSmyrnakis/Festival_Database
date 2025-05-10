@@ -1,0 +1,2 @@
+visitor_name	event_name	avg_overall_impression
+Clifford Erickson	Not Concert	1.00

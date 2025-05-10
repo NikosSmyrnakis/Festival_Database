@@ -1,0 +1,2 @@
+artist_ID	artist_name	continent_count
+11	David Santos	3
