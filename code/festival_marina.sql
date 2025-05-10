@@ -1,278 +1,309 @@
 -- == TABLES CREATION == --
-
 -- Festival
 -- Stores basic information about each festival
-CREATE TABLE festival (
-    festival_ID INT PRIMARY KEY AUTO_INCREMENT,
-    starting_date DATE NOT NULL,
-    duration INT NOT NULL -- in days
-);
+CREATE TABLE
+    festival (
+        festival_ID INT PRIMARY KEY AUTO_INCREMENT,
+        starting_date DATE NOT NULL,
+        duration INT NOT NULL -- in days
+    );
 
 -- Festival Location
 -- Each festival can have one or more associated locations
-CREATE TABLE festival_location (
-    festival_ID INT,
-    festival_location_ID INT PRIMARY KEY AUTO_INCREMENT,
-    address VARCHAR(255) NOT NULL,
-    town VARCHAR(100) NOT NULL,
-    country VARCHAR(100) NOT NULL,
-    continent VARCHAR(100) NOT NULL,
-    geo_coordinates VARCHAR(100) NOT NULL,
-    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID)
-);
+CREATE TABLE
+    festival_location (
+        festival_ID INT,
+        festival_location_ID INT PRIMARY KEY AUTO_INCREMENT,
+        address VARCHAR(255) NOT NULL,
+        town VARCHAR(100) NOT NULL,
+        country VARCHAR(100) NOT NULL,
+        continent VARCHAR(100) NOT NULL,
+        geo_coordinates VARCHAR(100) NOT NULL,
+        FOREIGN KEY (festival_ID) REFERENCES festival (festival_ID)
+    );
 
 -- Personel
 -- Stores personal and professional information about event staff
-CREATE TABLE personel (
-    personel_ID INT PRIMARY KEY AUTO_INCREMENT,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    age INT NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(20) NOT NULL,
-    expertise_status ENUM('intern', 'beginer', 'intermidiate', 'experienced', 'very_experienced')
-);
+CREATE TABLE
+    personel (
+        personel_ID INT PRIMARY KEY AUTO_INCREMENT,
+        first_name VARCHAR(100) NOT NULL,
+        last_name VARCHAR(100) NOT NULL,
+        age INT NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone_number VARCHAR(20) NOT NULL,
+        expertise_status ENUM (
+            'intern',
+            'beginer',
+            'intermidiate',
+            'experienced',
+            'very_experienced'
+        )
+    );
 
 -- Building
 -- Details about buildings where events may take place
-CREATE TABLE building (
-    building_ID INT PRIMARY KEY AUTO_INCREMENT,
-    building_name VARCHAR(255) NOT NULL,
-    building_description TEXT NOT NULL,
-    max_capacity INT NOT NULL
-);
+CREATE TABLE
+    building (
+        building_ID INT PRIMARY KEY AUTO_INCREMENT,
+        building_name VARCHAR(255) NOT NULL,
+        building_description TEXT NOT NULL,
+        max_capacity INT NOT NULL
+    );
 
 -- Technical Equipment
 -- Stores information about technical equipment wanted from buildings
-CREATE TABLE technical_equipment (
-    technical_equipment_ID INT PRIMARY KEY AUTO_INCREMENT,
-    building_ID INT,
-    equipment_name VARCHAR(255) NOT NULL,
-    equipment_description TEXT NOT NULL,
-    FOREIGN KEY (building_ID) REFERENCES building(building_ID)
-);
+CREATE TABLE
+    technical_equipment (
+        technical_equipment_ID INT PRIMARY KEY AUTO_INCREMENT,
+        building_ID INT,
+        equipment_name VARCHAR(255) NOT NULL,
+        equipment_description TEXT NOT NULL,
+        FOREIGN KEY (building_ID) REFERENCES building (building_ID)
+    );
+
 -- Artist
 -- Stores artist profiles and metadata
-CREATE TABLE artist (
-    artist_ID INT PRIMARY KEY AUTO_INCREMENT,
-    artist_name VARCHAR(255) NOT NULL,
-    stage_name VARCHAR(255),  -- can be NULL
-    artist_date_of_birth DATE NOT NULL,
-    artist_debute DATE NOT NULL,
-    artist_website VARCHAR(255),     -- can be NULL
-    artist_instagram VARCHAR(255),   -- can be NULL
-    num_of_consecutive_years_participating INT DEFAULT 0,
-    CHECK (0 <= num_of_consecutive_years_participating AND num_of_consecutive_years_participating <= 3) -- number of years the artist has participated in the festival
-);
+CREATE TABLE
+    artist (
+        artist_ID INT PRIMARY KEY AUTO_INCREMENT,
+        artist_name VARCHAR(255) NOT NULL,
+        stage_name VARCHAR(255), -- can be NULL
+        artist_date_of_birth DATE NOT NULL,
+        artist_debute DATE NOT NULL,
+        artist_website VARCHAR(255), -- can be NULL
+        artist_instagram VARCHAR(255), -- can be NULL
+        num_of_consecutive_years_participating INT DEFAULT 0,
+        CHECK (
+            0 <= num_of_consecutive_years_participating
+            AND num_of_consecutive_years_participating <= 3
+        ) -- number of years the artist has participated in the festival
+    );
 
 -- Group 
 -- Stores information about groups, including their members
-CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
-    group_ID INT PRIMARY KEY AUTO_INCREMENT,
-    group_name VARCHAR(255) NOT NULL,
-    group_date_of_birth DATE NOT NULL,
-    group_debute DATE NOT NULL,
-    group_website VARCHAR(255),     -- can be NULL
-    group_instagram VARCHAR(255),   -- can be NULL
-    member_names TEXT DEFAULT '',
-    num_of_consecutive_years_participating INT DEFAULT 0,
-    CHECK (0 <= num_of_consecutive_years_participating AND num_of_consecutive_years_participating <= 3) -- number of years the artist has participated in the festival
-
-    );    
+CREATE TABLE
+    `group` ( -- renamed from group to avoid SQL keyword conflict
+        group_ID INT PRIMARY KEY AUTO_INCREMENT,
+        group_name VARCHAR(255) NOT NULL,
+        group_date_of_birth DATE NOT NULL,
+        group_debute DATE NOT NULL,
+        group_website VARCHAR(255), -- can be NULL
+        group_instagram VARCHAR(255), -- can be NULL
+        member_names TEXT DEFAULT '',
+        num_of_consecutive_years_participating INT DEFAULT 0,
+        CHECK (
+            0 <= num_of_consecutive_years_participating
+            AND num_of_consecutive_years_participating <= 3
+        ) -- number of years the artist has participated in the festival
+    );
 
 -- Genre
 -- Represents the genre of an artist or group
-CREATE TABLE genre (
-    genre_ID INT PRIMARY KEY AUTO_INCREMENT,
-    genre_name VARCHAR(100) NOT NULL,
-    subgenre_name VARCHAR(100),
-    artist_ID INT,
-    group_ID INT,
-    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID),
-    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
-);
-
+CREATE TABLE
+    genre (
+        genre_ID INT PRIMARY KEY AUTO_INCREMENT,
+        genre_name VARCHAR(100) NOT NULL,
+        subgenre_name VARCHAR(100),
+        artist_ID INT,
+        group_ID INT,
+        FOREIGN KEY (artist_ID) REFERENCES artist (artist_ID),
+        FOREIGN KEY (group_ID) REFERENCES `group` (group_ID)
+    );
 
 -- Group Members
 -- Stores the relationship between groups and their members
-CREATE TABLE group_members (
-    group_ID INT,
-    artist_ID INT,
-    PRIMARY KEY (group_ID, artist_ID),
-    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
-    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID)
-); 
+CREATE TABLE
+    group_members (
+        group_ID INT,
+        artist_ID INT,
+        PRIMARY KEY (group_ID, artist_ID),
+        FOREIGN KEY (group_ID) REFERENCES `group` (group_ID),
+        FOREIGN KEY (artist_ID) REFERENCES artist (artist_ID)
+    );
 
 -- Events
 -- Represents a specific event held as part of a festival
-CREATE TABLE events (
-    event_ID INT PRIMARY KEY AUTO_INCREMENT,
-    festival_ID INT,
-    event_name VARCHAR(255) NOT NULL,
-    festival_day INT NOT NULL,
-    event_start_time DATETIME NOT NULL,
-    event_end_time DATETIME NOT NULL,
-    building_ID INT,
-    event_duration INT GENERATED ALWAYS AS (
-        CASE
-            WHEN event_end_time >= event_start_time THEN TIMESTAMPDIFF(MINUTE, event_start_time, event_end_time)
-            ELSE TIMESTAMPDIFF(MINUTE, event_start_time, event_end_time) + 1440
-        END     
-    ) STORED,
-    FOREIGN KEY (building_ID) REFERENCES building(building_ID),
-    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID), -- ,
-    VIP_total INT, 
-    backstage_total INT,
-    general_total INT
+CREATE TABLE
+    events (
+        event_ID INT PRIMARY KEY AUTO_INCREMENT,
+        festival_ID INT,
+        event_name VARCHAR(255) NOT NULL,
+        festival_day INT NOT NULL,
+        event_start_time DATETIME NOT NULL,
+        event_end_time DATETIME NOT NULL,
+        building_ID INT,
+        event_duration INT GENERATED ALWAYS AS (
+            CASE
+                WHEN event_end_time >= event_start_time THEN TIMESTAMPDIFF (MINUTE, event_start_time, event_end_time)
+                ELSE TIMESTAMPDIFF (MINUTE, event_start_time, event_end_time) + 1440
+            END
+        ) STORED,
+        FOREIGN KEY (building_ID) REFERENCES building (building_ID),
+        FOREIGN KEY (festival_ID) REFERENCES festival (festival_ID), -- ,
+        VIP_total INT,
+        backstage_total INT,
+        general_total INT
     );
 
 -- Performances
 -- Each performance belongs to an event and has a type and duration
-CREATE TABLE performances (
-    performance_ID INT PRIMARY KEY AUTO_INCREMENT,
-    event_ID INT,
-    performance_type ENUM('warm up', 'headline', 'special_guest', 'finale') NOT NULL,
-    performance_start_time DATETIME NOT NULL,
-    performance_end_time DATETIME NOT NULL, -- Time plain didnt work because an event can begin at 11:00 and end at next day 01:00
-    performance_duration INT GENERATED ALWAYS AS (
-        CASE
-            WHEN performance_end_time >= performance_start_time THEN TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time)
-            ELSE TIMESTAMPDIFF(MINUTE, performance_start_time, performance_end_time) + 1440
-        END     
-    ) STORED,    
-    building_ID INT NOT NULL,
-    building_name VARCHAR(255) NOT NULL,
-    artist_ID INT DEFAULT NULL,
-    group_ID INT DEFAULT NULL,
-    FOREIGN KEY (event_ID) REFERENCES events(event_ID),
-    FOREIGN KEY (building_ID) REFERENCES building(building_ID),
-    CHECK (performance_start_time < performance_end_time),
-    CHECK (performance_duration <= 180) -- max duration of a performance is 3 hours
-);
+CREATE TABLE
+    performances (
+        performance_ID INT PRIMARY KEY AUTO_INCREMENT,
+        event_ID INT,
+        performance_type ENUM ('warm up', 'headline', 'special_guest', 'finale') NOT NULL,
+        performance_start_time DATETIME NOT NULL,
+        performance_end_time DATETIME NOT NULL, -- Time plain didnt work because an event can begin at 11:00 and end at next day 01:00
+        performance_duration INT GENERATED ALWAYS AS (
+            CASE
+                WHEN performance_end_time >= performance_start_time THEN TIMESTAMPDIFF (
+                    MINUTE,
+                    performance_start_time,
+                    performance_end_time
+                )
+                ELSE TIMESTAMPDIFF (
+                    MINUTE,
+                    performance_start_time,
+                    performance_end_time
+                ) + 1440
+            END
+        ) STORED,
+        building_ID INT NOT NULL,
+        building_name VARCHAR(255) NOT NULL,
+        artist_ID INT DEFAULT NULL,
+        group_ID INT DEFAULT NULL,
+        FOREIGN KEY (event_ID) REFERENCES events (event_ID),
+        FOREIGN KEY (building_ID) REFERENCES building (building_ID),
+        CHECK (performance_start_time < performance_end_time),
+        CHECK (performance_duration <= 180) -- max duration of a performance is 3 hours
+    );
 
 -- Personel-Event Relationship (many-to-many)
 -- This table defines the role of each personel in each event
-CREATE TABLE role_of_personel_on_event (
-    personel_ID INT,
-    event_ID INT,
-    role ENUM('technical','security','support') NOT NULL,
-    PRIMARY KEY (personel_ID, event_ID),
-    FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID),
-    FOREIGN KEY (event_ID) REFERENCES events(event_ID)
-);
+CREATE TABLE
+    role_of_personel_on_event (
+        personel_ID INT,
+        event_ID INT,
+        role ENUM ('technical', 'security', 'support') NOT NULL,
+        PRIMARY KEY (personel_ID, event_ID),
+        FOREIGN KEY (personel_ID) REFERENCES personel (personel_ID),
+        FOREIGN KEY (event_ID) REFERENCES events (event_ID)
+    );
 
 -- Visitor
 -- Stores personal data for individuals attending events
-CREATE TABLE visitor (
-    visitor_ID INT AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    telephone VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    age INT NOT NULL
-);
+CREATE TABLE
+    visitor (
+        visitor_ID INT AUTO_INCREMENT PRIMARY KEY,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        telephone VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        age INT NOT NULL
+    );
 
 -- Ticket (one-to-many with visitor & event)
 -- A ticket belongs to one visitor and one event
-CREATE TABLE ticket (
-    ticket_ID INT AUTO_INCREMENT PRIMARY KEY,
-    event_ID INT,
-    visitor_ID INT NOT NULL,
-    barcode CHAR(13),
-    FOREIGN KEY (visitor_ID) REFERENCES visitor(visitor_ID),
-    FOREIGN KEY (event_ID) REFERENCES events(event_ID),
-
-    ticket_type ENUM('general_admission', 'VIP', 'backstage') NOT NULL,
-    purchase_date DATE,
-    purchase_price DECIMAL(10, 2),
-    payment_method ENUM('debit_card', 'credit_card', 'I-BAN'),
-    activated_status BOOLEAN DEFAULT FALSE,
-    visitor_name VARCHAR(100),
-    visitor_last_name VARCHAR(100),
-    visitor_email VARCHAR(100),
-    visitor_telephone VARCHAR(20),
-    visitor_age INT
-);
-
+CREATE TABLE
+    ticket (
+        ticket_ID INT AUTO_INCREMENT PRIMARY KEY,
+        event_ID INT,
+        visitor_ID INT NOT NULL,
+        barcode CHAR(13),
+        FOREIGN KEY (visitor_ID) REFERENCES visitor (visitor_ID),
+        FOREIGN KEY (event_ID) REFERENCES events (event_ID),
+        ticket_type ENUM ('general_admission', 'VIP', 'backstage') NOT NULL,
+        purchase_date DATE,
+        purchase_price DECIMAL(10, 2),
+        payment_method ENUM ('debit_card', 'credit_card', 'I-BAN'),
+        activated_status BOOLEAN DEFAULT FALSE,
+        visitor_name VARCHAR(100),
+        visitor_last_name VARCHAR(100),
+        visitor_email VARCHAR(100),
+        visitor_telephone VARCHAR(20),
+        visitor_age INT
+    );
 
 -- Buyer
 -- Represents users interested in buying tickets
-CREATE TABLE buyer (
-    buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT
-);
-
+CREATE TABLE
+    buyer (
+        buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
+        visitor_ID INT
+    );
 
 -- Seller
 -- Represents users who are selling or listing tickets for resale
-CREATE TABLE seller (
-    seller_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT
-);
+CREATE TABLE
+    seller (
+        seller_ID INT PRIMARY KEY AUTO_INCREMENT,
+        visitor_ID INT
+    );
 
 -- Resale Queue (FIFO)
 -- A queue for tickets listed for resale, based on timestamp
-CREATE TABLE resale_queue (
-    resale_ID INT AUTO_INCREMENT PRIMARY KEY,
-    buyer_ID INT,
-    seller_ID INT,
-    event_name VARCHAR(255) NULL,
-    ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
-    ticket_ID INT NULL,
-    listed_at TIMESTAMP ,
-    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
-    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
-);
-
+CREATE TABLE
+    resale_queue (
+        resale_ID INT AUTO_INCREMENT PRIMARY KEY,
+        buyer_ID INT,
+        seller_ID INT,
+        event_name VARCHAR(255) NULL,
+        ticket_type ENUM ('general_admission', 'VIP', 'backstage') NULL,
+        ticket_ID INT NULL,
+        listed_at TIMESTAMP,
+        FOREIGN KEY (buyer_ID) REFERENCES buyer (buyer_ID),
+        FOREIGN KEY (seller_ID) REFERENCES seller (seller_ID),
+        FOREIGN KEY (ticket_ID) REFERENCES ticket (ticket_ID)
+    );
 
 -- Review
 -- Feedback for events by visitors who have activated tickets
 -- (Use a trigger to ensure review is only allowed if ticket is activated)
-CREATE TABLE review (
-   ticket_ID INT NOT NULL,
-   performance_ID INT NOT NULL,
-
-   artist_performance ENUM('1', '2', '3', '4', '5'),
-   sound_and_lighting ENUM('1', '2', '3', '4', '5'),
-   stage_presence ENUM('1', '2', '3', '4', '5'),
-   event_organization ENUM('1', '2', '3', '4', '5'),
-   overall_impression ENUM('1', '2', '3', '4', '5'),
-   PRIMARY KEY (ticket_ID, performance_ID),
-   FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID),
-   FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
-);
-
-
+CREATE TABLE
+    review (
+        ticket_ID INT NOT NULL,
+        performance_ID INT NOT NULL,
+        artist_performance ENUM ('1', '2', '3', '4', '5'),
+        sound_and_lighting ENUM ('1', '2', '3', '4', '5'),
+        stage_presence ENUM ('1', '2', '3', '4', '5'),
+        event_organization ENUM ('1', '2', '3', '4', '5'),
+        overall_impression ENUM ('1', '2', '3', '4', '5'),
+        PRIMARY KEY (ticket_ID, performance_ID),
+        FOREIGN KEY (ticket_ID) REFERENCES ticket (ticket_ID),
+        FOREIGN KEY (performance_ID) REFERENCES performances (performance_ID)
+    );
 
 -- Temporary Table for Resale Matches
-CREATE TABLE temp_resale_matches (
-    match_ID INT AUTO_INCREMENT PRIMARY KEY,
-    buyer_ID INT,
-    seller_ID INT,
-    ticket_ID INT,
-    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
-    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
-    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
-);
+CREATE TABLE
+    temp_resale_matches (
+        match_ID INT AUTO_INCREMENT PRIMARY KEY,
+        buyer_ID INT,
+        seller_ID INT,
+        ticket_ID INT,
+        FOREIGN KEY (buyer_ID) REFERENCES buyer (buyer_ID),
+        FOREIGN KEY (seller_ID) REFERENCES seller (seller_ID),
+        FOREIGN KEY (ticket_ID) REFERENCES ticket (ticket_ID)
+    );
 
-CREATE TABLE photo(
-    photo_ID INT AUTO_INCREMENT PRIMARY KEY,
-    photo_name VARCHAR(255) NOT NULL,
-    photo_description TEXT NOT NULL,
-    artist_ID INT,
-    group_ID INT,
-    performance_ID INT,
-    event_ID INT,
-    festival_ID INT,
-    technical_equipment_ID INT,
-    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID),
-    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
-    FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID),
-    FOREIGN KEY (event_ID) REFERENCES events(event_ID),
-    FOREIGN KEY (festival_ID) REFERENCES festival(festival_ID),
-    FOREIGN KEY (technical_equipment_ID) REFERENCES technical_equipment(technical_equipment_ID)
-);
+CREATE TABLE
+    photo (
+        photo_ID INT AUTO_INCREMENT PRIMARY KEY,
+        photo_name VARCHAR(255) NOT NULL,
+        photo_description TEXT NOT NULL,
+        artist_ID INT,
+        group_ID INT,
+        performance_ID INT,
+        event_ID INT,
+        festival_ID INT,
+        technical_equipment_ID INT,
+        FOREIGN KEY (artist_ID) REFERENCES artist (artist_ID),
+        FOREIGN KEY (group_ID) REFERENCES `group` (group_ID),
+        FOREIGN KEY (performance_ID) REFERENCES performances (performance_ID),
+        FOREIGN KEY (event_ID) REFERENCES events (event_ID),
+        FOREIGN KEY (festival_ID) REFERENCES festival (festival_ID),
+        FOREIGN KEY (technical_equipment_ID) REFERENCES technical_equipment (technical_equipment_ID)
+    );
 
 -- == INDEXES == --
 
