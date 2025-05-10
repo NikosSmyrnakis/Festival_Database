@@ -429,49 +429,131 @@ END$$
 DELIMITER ;
 
 
-
-
---- Visitor Triggers --- 
-
---- Visitor Trigger 2 --- 
--- When a new visitor is created, create a corresponding buyer entry
--- with the same visitor_ID
--- This is to ensure that every visitor can be a buyer or seller
--- without needing to create a new entry in the buyer table
-
-DELIMITER $$
-CREATE TRIGGER create_buyer_after_visitor
-AFTER INSERT ON visitor
-FOR EACH ROW
-BEGIN
-    INSERT INTO buyer (visitor_ID)
-    VALUES (NEW.visitor_ID);
-END$$
-DELIMITER ;
-
---- Visitor Trigger 3 ---
--- When a new visitor is created, create a corresponding seller entry
--- with the same visitor_ID
--- This is to ensure that every visitor can be a buyer or seller
--- without needing to create a new entry in the seller table
-
-DELIMITER $$
-CREATE TRIGGER create_seller_after_visitor
-AFTER INSERT ON visitor
-FOR EACH ROW
-BEGIN
-    INSERT INTO seller (visitor_ID)
-    VALUES (NEW.visitor_ID);
-END$$
-DELIMITER ;
-
-DELIMITER $$
-
 --- Resale Triggers ---
 --- Resale Trigger 1 ---
--- When a ticket is activated, check if it can be matched with a buyer/seller
--- If a match is found, insert into temp_resale_matches and delete from resale_queue
+-- Resale Trigger 1 - Validation for Seller and Buyer
+DELIMITER $$
 
+-- Resale Trigger 1 - Validation for Seller and Buyer
+CREATE TRIGGER validate_resale_input
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    -- Πωλητής (Seller): Ελέγχει αν τα πεδία ticket_ID, event_name και ticket_type δεν είναι NULL
+    IF NEW.seller_ID IS NOT NULL THEN
+        IF NEW.ticket_ID IS NULL OR NEW.event_name IS NULL OR NEW.ticket_type IS NULL THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Seller must provide ticket_ID, event_name, and ticket_type.';
+        END IF;
+    END IF;
+
+    -- Αγοραστής (Buyer): Ελέγχει τις δύο περιπτώσεις
+    IF NEW.buyer_ID IS NOT NULL THEN
+        -- Περίπτωση 1: Θέλει εισιτήριο τύπου χωρίς να ξέρει ποιο ακριβώς
+        IF (
+            (NEW.ticket_ID IS NULL AND NEW.event_name IS NOT NULL AND NEW.ticket_type IS NULL ) OR
+            (NEW.ticket_ID IS NULL AND NEW.event_name IS  NULL AND NEW.ticket_type IS NOT NULL ) OR
+            (NEW.ticket_ID IS NULL AND NEW.event_name IS NULL AND NEW.ticket_type IS NULL ) OR
+            (NEW.ticket_ID IS NOT NULL AND NEW.event_name IS NOT NULL AND NEW.ticket_type IS NOT NULL )
+            ) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Buyer must either specify a ticket type or a specific ticket.';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+--- Resale Trigger 2 ---
+--  Matching Seller and Buyer and Updating Ticket
+
+DELIMITER $$
+
+-- Resale Trigger 2 - Matching Seller and Buyer and Updating Ticket
+CREATE TRIGGER match_resale_after_insert
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE matched_seller INT;
+    DECLARE matched_buyer INT;
+    DECLARE v_event_ID INT;
+    DECLARE v_ticket_type ENUM('general_admission', 'VIP', 'backstage');
+    DECLARE v_purchase_date DATE;
+    DECLARE v_price DECIMAL(10,2);
+    DECLARE v_payment_method ENUM('debit_card', 'credit_card', 'I-BAN');
+    DECLARE v_activated BOOLEAN;
+
+    -- Εάν ο αγοραστής (buyer) είναι ορισμένος, κάνε την αντιστοίχιση με τον πωλητή
+    IF NEW.buyer_ID IS NOT NULL THEN
+        -- Αντιστοίχιση με διαθέσιμο seller για το ίδιο ticket_ID
+        SELECT seller_ID INTO matched_seller
+        FROM resale_queue
+        WHERE ticket_ID = NEW.ticket_ID
+          AND seller_ID IS NOT NULL
+          AND buyer_ID IS NULL
+        LIMIT 1;
+
+        IF matched_seller IS NOT NULL THEN
+            -- Εισαγωγή στο temp_resale_matches
+            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
+            VALUES (NEW.buyer_ID, matched_seller, NEW.ticket_ID);
+
+            -- Διαγραφή των matched εγγραφών από resale_queue
+            SET NEW.resale_ID = NULL;
+        END IF;
+    END IF;
+
+    -- Εάν ο πωλητής (seller) είναι ορισμένος, κάνε την αντιστοίχιση με τον αγοραστή
+    IF NEW.seller_ID IS NOT NULL THEN
+        -- Αντιστοίχιση με διαθέσιμο buyer για το ίδιο ticket_ID
+        SELECT buyer_ID INTO matched_buyer
+        FROM resale_queue
+        WHERE ticket_ID = NEW.ticket_ID
+          AND buyer_ID IS NOT NULL
+          AND seller_ID IS NULL
+        LIMIT 1;
+
+        IF matched_buyer IS NOT NULL THEN
+            -- Εισαγωγή στο temp_resale_matches
+            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
+            VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
+
+            -- Διαγραφή των matched εγγραφών από resale_queue
+            SET NEW.resale_ID = NULL;
+
+            -- Ενημέρωση του πίνακα ticket με τον νέο αγοραστή
+            -- Λήψη των αρχικών πληροφοριών του εισιτηρίου
+            SELECT event_ID, ticket_type, purchase_date, purchase_price, 
+                   payment_method, activated_status
+            INTO v_event_ID, v_ticket_type, v_purchase_date, v_price,
+                v_payment_method, v_activated
+            FROM ticket
+            WHERE ticket_ID = NEW.ticket_ID;
+
+            -- Διαγραφή του παλιού εισιτηρίου
+            DELETE FROM ticket WHERE ticket_ID = NEW.ticket_ID;
+
+            -- Εισαγωγή του νέου εισιτηρίου με τον αγοραστή
+            INSERT INTO ticket (
+                event_ID, visitor_ID, ticket_type, purchase_date,
+                purchase_price, payment_method, activated_status
+            )
+            VALUES (
+                v_event_ID, matched_buyer, v_ticket_type, v_purchase_date,
+                v_price, v_payment_method, v_activated
+            );
+        END IF;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+
+
+
+/*
 CREATE TRIGGER match_resale_after_insert
 BEFORE INSERT ON resale_queue
 FOR EACH ROW
@@ -549,6 +631,34 @@ BEGIN
 
 END$$
 DELIMITER ;
+*/
+
+
+--- Resale Trigger 2 --- 
+-- When a new resale entry of a buyer is created, add the buyer to the buyer table 
+-- When a new resale entry of a seller is created, add the seller to the seller table
+
+DELIMITER $$
+
+CREATE TRIGGER create_buyer_or_seller_after_visitor
+AFTER INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    -- Αν το buyer_ID δεν είναι NULL και το seller_ID είναι NULL, τότε αντιγράφουμε το buyer_ID στο buyer table
+    IF NEW.buyer_ID IS NOT NULL AND NEW.seller_ID IS NULL THEN
+        INSERT INTO buyer (buyer_ID, visitor_ID)
+        VALUES (NEW.buyer_ID, NEW.buyer_ID); -- Χρησιμοποιούμε το NEW.buyer_ID ως visitor_ID
+    END IF;
+
+    -- Αν το seller_ID δεν είναι NULL και το buyer_ID είναι NULL, τότε αντιγράφουμε το seller_ID στο seller table
+    IF NEW.seller_ID IS NOT NULL AND NEW.buyer_ID IS NULL THEN
+        INSERT INTO seller (seller_ID, visitor_ID)
+        VALUES (NEW.seller_ID, NEW.seller_ID); -- Χρησιμοποιούμε το NEW.seller_ID ως visitor_ID
+    END IF;
+END$$
+
+DELIMITER ;
+
 
 --- Event Triggers ---
 --- Event Trigger 1 ---
