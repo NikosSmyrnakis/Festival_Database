@@ -42,6 +42,8 @@ CREATE TABLE building (
     max_capacity INT NOT NULL
 );
 
+-- Technical Equipment
+-- Stores information about technical equipment wanted from buildings
 CREATE TABLE technical_equipment (
     technical_equipment_ID INT PRIMARY KEY AUTO_INCREMENT,
     building_ID INT,
@@ -78,6 +80,8 @@ CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
 
     );    
 
+-- Genre
+-- Represents the genre of an artist or group
 CREATE TABLE genre (
     genre_ID INT PRIMARY KEY AUTO_INCREMENT,
     genre_name VARCHAR(100) NOT NULL,
@@ -195,8 +199,7 @@ CREATE TABLE ticket (
 -- Represents users interested in buying tickets
 CREATE TABLE buyer (
     buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT,
-    FOREIGN KEY (buyer_ID) REFERENCES visitor(visitor_ID)
+    visitor_ID INT
 );
 
 
@@ -204,8 +207,7 @@ CREATE TABLE buyer (
 -- Represents users who are selling or listing tickets for resale
 CREATE TABLE seller (
     seller_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT,
-    FOREIGN KEY (seller_ID) REFERENCES visitor(visitor_ID)
+    visitor_ID INT
 );
 
 -- Resale Queue (FIFO)
@@ -297,7 +299,6 @@ CREATE INDEX idx_festival_location_continent ON festival_location(festival_ID, c
 
 
 -- == TRIGGERS == --
--- update barcode after inserting a new ticket
 
 
 
@@ -461,7 +462,6 @@ DELIMITER ;
 
 DELIMITER $$
 
--- Resale Trigger 2 - Matching Seller and Buyer and Updating Ticket
 CREATE TRIGGER match_resale_after_insert
 BEFORE INSERT ON resale_queue
 FOR EACH ROW
@@ -542,7 +542,7 @@ END$$
 DELIMITER ;
 
 
--- Resale Trigger 1 -- 
+-- Resale Trigger 3 -- 
 -- When a new resale entry of a buyer is created, add the buyer to the buyer table 
 -- When a new resale entry of a seller is created, add the seller to the seller table
 
@@ -554,15 +554,77 @@ FOR EACH ROW
 BEGIN
     -- Αν το buyer_ID δεν είναι NULL και το seller_ID είναι NULL, τότε αντιγράφουμε το buyer_ID στο buyer table
     IF NEW.buyer_ID IS NOT NULL AND NEW.seller_ID IS NULL THEN
-        INSERT INTO buyer (buyer_ID, visitor_ID)
-        VALUES (NEW.buyer_ID, NEW.buyer_ID); -- Χρησιμοποιούμε το NEW.buyer_ID ως visitor_ID
+        INSERT INTO buyer (visitor_ID)
+        VALUES (NEW.buyer_ID); -- Χρησιμοποιούμε το NEW.buyer_ID ως visitor_ID
     END IF;
 
     -- Αν το seller_ID δεν είναι NULL και το buyer_ID είναι NULL, τότε αντιγράφουμε το seller_ID στο seller table
     IF NEW.seller_ID IS NOT NULL AND NEW.buyer_ID IS NULL THEN
-        INSERT INTO seller (seller_ID, visitor_ID)
-        VALUES (NEW.seller_ID, NEW.seller_ID); -- Χρησιμοποιούμε το NEW.seller_ID ως visitor_ID
+        INSERT INTO seller (visitor_ID)
+        VALUES (NEW.seller_ID); -- Χρησιμοποιούμε το NEW.seller_ID ως visitor_ID
     END IF;
+END$$
+
+DELIMITER ;
+
+-- Resale Trigger 4 --
+-- Check if the ticket is sold out before allowing resale
+DELIMITER $$
+
+CREATE TRIGGER trg_check_soldout_before_resale
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE event_id_val INT;
+    DECLARE ticket_type_val ENUM('general_admission', 'VIP', 'backstage');
+    DECLARE total_available INT;
+    DECLARE sold_count INT;
+    DECLARE msg_text VARCHAR(255);
+
+    -- Περίπτωση 1: υπάρχει ticket_ID → πάρε event_ID και ticket_type από τον πίνακα ticket
+    IF NEW.ticket_ID IS NOT NULL THEN
+        SELECT event_ID, ticket_type
+        INTO event_id_val, ticket_type_val
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+
+    -- Περίπτωση 2: δεν υπάρχει ticket_ID αλλά υπάρχει event_name και ticket_type
+    ELSEIF NEW.event_name IS NOT NULL AND NEW.ticket_type IS NOT NULL THEN
+        SELECT event_ID
+        INTO event_id_val
+        FROM events
+        WHERE event_name = NEW.event_name
+        LIMIT 1;  -- για ασφάλεια σε διπλότυπα ονόματα
+
+        SET ticket_type_val = NEW.ticket_type;
+
+    -- Περίπτωση 3: δεν υπάρχουν αρκετά στοιχεία για έλεγχο
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Not enough information to check resale availability.';
+    END IF;
+
+    -- Ανάλογα με τον τύπο εισιτηρίου, βρες το σύνολο διαθέσιμων
+    IF ticket_type_val = 'VIP' THEN
+        SELECT VIP_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSEIF ticket_type_val = 'backstage' THEN
+        SELECT backstage_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSE
+        SELECT general_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    END IF;
+
+    -- Πόσα έχουν πουληθεί για το event και τον τύπο
+    SELECT COUNT(*) INTO sold_count
+    FROM ticket
+    WHERE event_ID = event_id_val AND ticket_type = ticket_type_val;
+
+    -- Έλεγχος αν επιτρέπεται το resale
+    IF sold_count < total_available THEN
+        SET msg_text = CONCAT('Resale not allowed: ', ticket_type_val, ' tickets are not sold out yet.');
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = msg_text;
+    END IF;
+
 END$$
 
 DELIMITER ;
@@ -1057,68 +1119,8 @@ END $$
 
 DELIMITER ;
 
--- Resale Triggers --
--- Resale Trigger 1 --
--- Check if the ticket is sold out before allowing resale
-DELIMITER $$
 
-CREATE TRIGGER trg_check_soldout_before_resale
-BEFORE INSERT ON resale_queue
-FOR EACH ROW
-BEGIN
-    DECLARE event_id_val INT;
-    DECLARE ticket_type_val ENUM('general_admission', 'VIP', 'backstage');
-    DECLARE total_available INT;
-    DECLARE sold_count INT;
-    DECLARE msg_text VARCHAR(255);
 
-    -- Περίπτωση 1: υπάρχει ticket_ID → πάρε event_ID και ticket_type από τον πίνακα ticket
-    IF NEW.ticket_ID IS NOT NULL THEN
-        SELECT event_ID, ticket_type
-        INTO event_id_val, ticket_type_val
-        FROM ticket
-        WHERE ticket_ID = NEW.ticket_ID;
-
-    -- Περίπτωση 2: δεν υπάρχει ticket_ID αλλά υπάρχει event_name και ticket_type
-    ELSEIF NEW.event_name IS NOT NULL AND NEW.ticket_type IS NOT NULL THEN
-        SELECT event_ID
-        INTO event_id_val
-        FROM events
-        WHERE event_name = NEW.event_name
-        LIMIT 1;  -- για ασφάλεια σε διπλότυπα ονόματα
-
-        SET ticket_type_val = NEW.ticket_type;
-
-    -- Περίπτωση 3: δεν υπάρχουν αρκετά στοιχεία για έλεγχο
-    ELSE
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Not enough information to check resale availability.';
-    END IF;
-
-    -- Ανάλογα με τον τύπο εισιτηρίου, βρες το σύνολο διαθέσιμων
-    IF ticket_type_val = 'VIP' THEN
-        SELECT VIP_total INTO total_available FROM events WHERE event_ID = event_id_val;
-    ELSEIF ticket_type_val = 'backstage' THEN
-        SELECT backstage_total INTO total_available FROM events WHERE event_ID = event_id_val;
-    ELSE
-        SELECT general_total INTO total_available FROM events WHERE event_ID = event_id_val;
-    END IF;
-
-    -- Πόσα έχουν πουληθεί για το event και τον τύπο
-    SELECT COUNT(*) INTO sold_count
-    FROM ticket
-    WHERE event_ID = event_id_val AND ticket_type = ticket_type_val;
-
-    -- Έλεγχος αν επιτρέπεται το resale
-    IF sold_count < total_available THEN
-        SET msg_text = CONCAT('Resale not allowed: ', ticket_type_val, ' tickets are not sold out yet.');
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = msg_text;
-    END IF;
-
-END$$
-
-DELIMITER ;
 
 
 
@@ -1153,4 +1155,27 @@ ADD CONSTRAINT chk_one_side_only CHECK (
 
 
 
+-- == CASCADES == --
+ALTER TABLE role_of_personel_on_event
+ADD CONSTRAINT fk_role_personel
+FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID)
+ON DELETE CASCADE;
+
+
+ALTER TABLE review
+ADD CONSTRAINT fk_review_ticket
+FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+ON DELETE CASCADE;
+
+
+ALTER TABLE role_of_personel_on_event
+ADD CONSTRAINT fk_role_event
+FOREIGN KEY (event_ID) REFERENCES events(event_ID)
+ON DELETE CASCADE;
+
+
+ALTER TABLE group_members
+ADD CONSTRAINT fk_group_members_group
+FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
+ON DELETE CASCADE;
 
