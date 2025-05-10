@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-70	Alexandra Williamson	11	Susan Lee	22
-1	Michelle Bridges	12	Latoya Brady	22
-42	Jacob Smith	17	Katrina Acevedo	20
-86	Stephanie Wong	48	Carrie Rhodes	20
-77	Morgan Dominguez	39	Erika Wyatt	20
+28	Steven Obrien	13	Amy Newman	22
+128	Chad Haley	42	Debra Curry	21
+40	Charles Clark	2	Ian Acosta	21
+113	John Carrillo	28	Renee Mitchell	20
+135	Courtney Mosley	11	David Santos	20

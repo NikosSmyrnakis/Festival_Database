@@ -1,6 +1,6 @@
 artist_ID	artist_name	age	festival_participations
-34	Timothy Fox	22	5
-29	John Kent	22	3
-39	Erika Wyatt	22	3
-48	Carrie Rhodes	26	3
-32	Nicole Mendez	25	2
+43	Michael Berger	25	3
+1	Paula Ward	20	3
+30	Valerie Barnes	29	2
+36	Ashley Harris	26	2
+14	Mr. William Jones MD	28	2

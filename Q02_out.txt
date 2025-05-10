@@ -1,23 +1,14 @@
 artist_ID	artist_name	genre_name	has_participated
-41	Brandon Juarez	Rock	no
-48	Carrie Rhodes	Rock	yes
-47	Christina Ramsey	Rock	no
-35	Derrick Garza	Rock	no
-20	Dr. Chris Bishop	Rock	no
-31	Dylan Wright	Rock	no
-8	Elizabeth Stein	Rock	no
-25	Gabriella Henderson	Rock	no
-3	Jason Park	Rock	no
-1	Jesse Jackson	Rock	no
-29	John Kent	Rock	no
-16	Kimberly Henson	Rock	no
-37	Matthew Simmons	Rock	yes
-32	Nicole Mendez	Rock	no
-6	Paul Stewart	Rock	yes
-42	Paul Webb	Rock	no
-2	Rachel Bowen	Rock	yes
-49	Scott Brown	Rock	no
-18	Shane Goodman	Rock	no
-13	Shari Cox	Rock	yes
-33	Stacy Marsh	Rock	no
-19	Timothy Estes	Rock	no
+40	Carlos Garcia	Rock	no
+32	Denise Olson	Rock	no
+21	Dustin Lawrence	Rock	no
+7	Jennifer Klein	Rock	no
+6	Jill Welch	Rock	no
+49	Jordan Sawyer	Rock	no
+12	Katie Craig	Rock	no
+34	Kristina Bennett	Rock	no
+5	Mariah Davis	Rock	no
+43	Michael Berger	Rock	no
+35	Nicole Hall	Rock	no
+9	Randy Thornton	Rock	no
+8	Timothy James	Rock	no

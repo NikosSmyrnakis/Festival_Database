@@ -48,8 +48,8 @@ WHERE
         FROM
             artist IGNORE INDEX (idx_artist_name)
         WHERE
-            artist_name = 'Shari Cox'
+            artist_name = 'Ashley Harris'
     )
 GROUP BY
     a.artist_name;
--- John Kent
+-- Amy Newman
