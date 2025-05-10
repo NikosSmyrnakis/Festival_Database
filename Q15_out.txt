@@ -1,6 +1,0 @@
-visitor_ID	visitor_name	artist_ID	artist_name	total_score
-28	Steven Obrien	13	Amy Newman	22
-128	Chad Haley	42	Debra Curry	21
-40	Charles Clark	2	Ian Acosta	21
-113	John Carrillo	28	Renee Mitchell	20
-135	Courtney Mosley	11	David Santos	20

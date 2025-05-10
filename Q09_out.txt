@@ -1,5 +1,0 @@
-visitor_ID	event_year	performance_count
-33	2024	4
-49	2026	4
-61	2024	4
-65	2022	4

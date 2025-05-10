@@ -1,4 +1,0 @@
-genre1	genre2	appearances
-Classical	Jazz	10
-Jazz	Pop	7
-Classical	Rock	6
