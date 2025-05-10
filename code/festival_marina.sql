@@ -476,6 +476,12 @@ FOR EACH ROW
 BEGIN
     DECLARE matched_seller INT;
     DECLARE matched_buyer INT;
+    DECLARE v_event_ID INT;
+    DECLARE v_ticket_type ENUM('general_admission', 'VIP', 'backstage');
+    DECLARE v_purchase_date DATE;
+    DECLARE v_price DECIMAL(10,2);
+    DECLARE v_payment_method ENUM('debit_card', 'credit_card', 'I-BAN');
+    DECLARE v_activated BOOLEAN;
     -- If new row is a buyer
     IF NEW.buyer_ID IS NOT NULL THEN
         -- Match με διαθέσιμο seller για ίδιο ticket_ID
@@ -510,8 +516,35 @@ BEGIN
             VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
             -- Διαγραφή των matched εγγραφών από resale_queue
             SET NEW.resale_ID = NULL;
+
+            -- update the ticket table
+
+            -- Get original ticket info
+            SELECT 
+                event_ID, ticket_type, purchase_date, purchase_price, 
+                payment_method, activated_status
+            INTO 
+                v_event_ID, v_ticket_type, v_purchase_date, v_price,
+                v_payment_method, v_activated
+            FROM ticket
+            WHERE ticket_ID = NEW.ticket_ID;
+
+            -- Delete old ticket
+            DELETE FROM ticket WHERE ticket_ID = NEW.ticket_ID;
+
+            -- Insert new ticket with buyer ID
+            INSERT INTO ticket (
+                event_ID, visitor_ID, ticket_type, purchase_date,
+                purchase_price, payment_method, activated_status
+            )
+            VALUES (
+                v_event_ID, matched_buyer, v_ticket_type, v_purchase_date,
+                v_price, v_payment_method, v_activated
+            );
+
         END IF;
     END IF;
+
 END$$
 DELIMITER ;
 
