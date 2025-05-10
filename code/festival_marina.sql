@@ -199,7 +199,7 @@ CREATE TABLE ticket (
 -- Represents users interested in buying tickets
 CREATE TABLE buyer (
     buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT
+    visitor_ID INT DEFAULT NULL,
 );
 
 
@@ -207,7 +207,7 @@ CREATE TABLE buyer (
 -- Represents users who are selling or listing tickets for resale
 CREATE TABLE seller (
     seller_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT
+    visitor_ID INT DEFAULT NULL,
 );
 
 -- Resale Queue (FIFO)
@@ -220,8 +220,8 @@ CREATE TABLE resale_queue (
     ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
     ticket_ID INT NULL,
     listed_at TIMESTAMP ,
-    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
-    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
+    FOREIGN KEY (buyer_ID) REFERENCES buyer(visitor_ID),
+    FOREIGN KEY (seller_ID) REFERENCES seller(visitor_ID),
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
 
@@ -549,7 +549,7 @@ DELIMITER ;
 DELIMITER $$
 
 CREATE TRIGGER create_buyer_or_seller_after_visitor
-AFTER INSERT ON resale_queue
+AFTER UPDATE ON resale_queue
 FOR EACH ROW
 BEGIN
     -- Αν το buyer_ID δεν είναι NULL και το seller_ID είναι NULL, τότε αντιγράφουμε το buyer_ID στο buyer table
@@ -728,17 +728,17 @@ BEGIN
     FROM performances
     WHERE
         building_ID = NEW.building_ID
-        AND event_ID = NEW.event_ID
+        -- AND event_ID = NEW.event_ID
         AND (
             -- Η νέα έναρξη είναι πριν από 5 λεπτά μετά το τέλος υπάρχουσας
-            NEW.performance_start_time < performance_end_time + INTERVAL 5 MINUTE
+            NEW.performance_start_time < performance_end_time + INTERVAL 4 MINUTE
             AND
             NEW.performance_start_time >= performance_start_time
 
             OR
 
             -- Η νέα λήξη είναι μετά από 5 λεπτά πριν την αρχή υπάρχουσας
-            NEW.performance_end_time > performance_start_time - INTERVAL 5 MINUTE
+            NEW.performance_end_time > performance_start_time - INTERVAL 4 MINUTE
             AND
             NEW.performance_end_time <= performance_end_time
         );
