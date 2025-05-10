@@ -573,6 +573,45 @@ END$$
 
 DELIMITER ;
 
+
+--- Event Trigger 2 ---
+--- Event building overlap prevention
+DELIMITER $$
+
+CREATE TRIGGER prevent_event_time_conflict_same_building
+BEFORE INSERT ON events
+FOR EACH ROW
+BEGIN
+    DECLARE conflict_count INT;
+
+    SELECT COUNT(*) INTO conflict_count
+    FROM events e
+    WHERE
+        e.building_ID = NEW.building_ID
+        AND DATE(e.event_start_time) = DATE(NEW.event_start_time) -- ίδια μέρα
+        AND (
+            -- Αν η νέα έναρξη είναι λιγότερο από 5 λεπτά μετά το τέλος υπάρχοντος
+            NEW.event_start_time < e.event_end_time + INTERVAL 5 MINUTE
+            AND NEW.event_start_time >= e.event_start_time
+
+            OR
+
+            -- Αν η νέα λήξη είναι λιγότερο από 5 λεπτά πριν την αρχή υπάρχοντος
+            NEW.event_end_time > e.event_start_time - INTERVAL 5 MINUTE
+            AND NEW.event_end_time <= e.event_end_time
+        );
+
+    IF conflict_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cannot schedule two events in the same building on the same day with less than 5 minutes between them.';
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+
+
 --- Gerne Triggers ---
 --- Genre Trigger 1 ---
 -- Ensure that each genre is linked to either one artist or one group, but not both or neither
@@ -595,74 +634,46 @@ DELIMITER ;
 
 ---Performance Triggers---
 --- Performance Trigger 1 ---
--- Check for overlapping events in the same building on the same day
+-- Ensure a minimum 5-minute break between performances of the same event in the same building
 
 DELIMITER $$
-CREATE TRIGGER check_performance_overlap
+
+CREATE TRIGGER prevent_no_break_between_performances
 BEFORE INSERT ON performances
 FOR EACH ROW
 BEGIN
     DECLARE conflict_count INT;
 
-    SELECT COUNT(*)
-    INTO conflict_count
+    SELECT COUNT(*) INTO conflict_count
     FROM performances
     WHERE
         building_ID = NEW.building_ID
         AND event_ID = NEW.event_ID
         AND (
-            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 1 SECOND AND performance_end_time + INTERVAL 1 SECOND)
+            -- Η νέα έναρξη είναι πριν από 5 λεπτά μετά το τέλος υπάρχουσας
+            NEW.performance_start_time < performance_end_time + INTERVAL 5 MINUTE
+            AND
+            NEW.performance_start_time >= performance_start_time
+
             OR
-            (NEW.performance_end_time BETWEEN performance_start_time - INTERVAL 1 SECOND AND performance_end_time + INTERVAL 1 SECOND)
+
+            -- Η νέα λήξη είναι μετά από 5 λεπτά πριν την αρχή υπάρχουσας
+            NEW.performance_end_time > performance_start_time - INTERVAL 5 MINUTE
+            AND
+            NEW.performance_end_time <= performance_end_time
         );
 
     IF conflict_count > 0 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Conflict with another performance in the same building, same day, time range +/-5 minutes';
+        SET MESSAGE_TEXT = 'There must be at least a 5-minute break between performances.';
     END IF;
 END$$
 
 DELIMITER ;
 
+
+
 --- Performance Trigger 2 ---
--- Check if the performance belongs to the same event as the ticket
-DELIMITER $$
-
-CREATE TRIGGER check_review_validity
-BEFORE INSERT ON review
-FOR EACH ROW
-BEGIN
-    DECLARE ticket_event INT;
-    DECLARE performance_event INT;
-    DECLARE is_activated BOOLEAN;
-
-    -- Πάρε το event στο οποίο ανήκει το εισιτήριο και αν είναι ενεργοποιημένο
-    SELECT event_ID, activated_status INTO ticket_event, is_activated
-    FROM ticket
-    WHERE ticket_ID = NEW.ticket_ID;
-
-    -- Πάρε το event στο οποίο ανήκει το performance
-    SELECT event_ID INTO performance_event
-    FROM performances
-    WHERE performance_ID = NEW.performance_ID;
-
-    -- Έλεγχος 1: Το εισιτήριο πρέπει να είναι ενεργοποιημένο
-    IF is_activated = FALSE THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'You cannot review a performance unless your ticket is activated.';
-    END IF;
-
-    -- Έλεγχος 2: Το performance πρέπει να ανήκει στο event του εισιτηρίου
-    IF ticket_event <> performance_event THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'The performance you are trying to review does not belong to the event of your ticket.';
-    END IF;
-
-END $$
-
-DELIMITER ;
-
---- Performance Trigger 3 ---
 --- Check for consecutive years of participation for artists
 DELIMITER $$
 
@@ -728,7 +739,7 @@ DELIMITER ;
 
 
 
---- Performance Trigger 4 ---
+--- Performance Trigger 3 ---
 --- Check for consecutive years of participation for groups
 DELIMITER $$
 
@@ -792,119 +803,9 @@ END$$
 
 DELIMITER ;
 
-/*
-
-BEFORE INSERT ON performances
-FOR EACH ROW
-BEGIN
-    DECLARE fest_year INT;
-    DECLARE found_current_festival INT DEFAULT 0;
-    DECLARE prev_year_exists INT DEFAULT 0;
-    DECLARE curr_num INT DEFAULT 0;
-
-    IF NEW.group_ID IS NOT NULL THEN
-
-        -- Πάρε το έτος του φεστιβάλ μέσω nested SELECT
-        SELECT YEAR((
-            SELECT f.starting_date
-            FROM festival f
-            WHERE f.festival_ID = (
-                SELECT e.festival_ID
-                FROM events e
-                WHERE e.event_ID = NEW.event_ID
-            )
-        )) INTO fest_year;
-
-        -- Έλεγχος αν έχει ήδη συμμετάσχει φέτος
-        SELECT COUNT(*) INTO found_current_festival
-        FROM performances p
-        WHERE p.group_ID = NEW.group_ID
-          AND (
-              SELECT YEAR((
-                  SELECT f.starting_date
-                  FROM festival f
-                  WHERE f.festival_ID = (
-                      SELECT e.festival_ID
-                      FROM events e
-                      WHERE e.event_ID = p.event_ID
-                  )
-              ))
-          ) = fest_year;
-
-        IF found_current_festival = 0 THEN
-
-            -- Έλεγχος αν συμμετείχε πέρυσι
-            SELECT COUNT(*) INTO prev_year_exists
-            FROM performances p
-            WHERE p.group_ID = NEW.group_ID
-              AND (
-                  SELECT YEAR((
-                      SELECT f.starting_date
-                      FROM festival f
-                      WHERE f.festival_ID = (
-                          SELECT e.festival_ID
-                          FROM events e
-                          WHERE e.event_ID = p.event_ID
-                      )
-                  ))
-              ) = fest_year - 1;
-
-            IF prev_year_exists > 0 THEN
-                SELECT num_of_consecutive_years_participating INTO curr_num
-                FROM `group`
-                WHERE group_ID = NEW.group_ID;
-
-                IF curr_num >= 3 THEN
-                    SIGNAL SQLSTATE '45002'
-                    SET MESSAGE_TEXT = 'The group cannot participate in more than 3 consecutive years.';
-                ELSE
-                    UPDATE `group`
-                    SET num_of_consecutive_years_participating = curr_num + 1
-                    WHERE group_ID = NEW.group_ID;
-                END IF;
-            ELSE
-                -- Νέα έναρξη συμμετοχών
-                UPDATE `group`
-                SET num_of_consecutive_years_participating = 1
-                WHERE group_ID = NEW.group_ID;
-            END IF;
-
-        END IF;
-    END IF;
-END$$
-
-DELIMITER ;
-*/
 
 
 --- Performance Trigger 5 ---
---- Check for overlapping performances in the same building and event
-DELIMITER $$
-
-CREATE TRIGGER prevent_overlapping_performances
-BEFORE INSERT ON performances
-FOR EACH ROW
-BEGIN
-    DECLARE conflict_count INT;
-
-    SELECT COUNT(*) INTO conflict_count
-    FROM performances p
-    WHERE p.event_ID = NEW.event_ID
-      AND p.building_ID = NEW.building_ID
-      AND (
-            p.performance_start_time < NEW.performance_end_time AND
-            p.performance_end_time > NEW.performance_start_time
-          );
-
-    IF conflict_count > 0 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Overlapping performance detected in the same building and event.';
-    END IF;
-END$$
-
-DELIMITER ;
-
---- Performance Trigger 6 ---
 --- Check for overlapping performances for the same artist or group
 DELIMITER $$
 
@@ -933,7 +834,7 @@ END$$
 
 DELIMITER ;
 
---- Performance Trigger 7 ---
+--- Performance Trigger 6 ---
 --- Check for overlapping performances for the same artist or group on update
 DELIMITER $$
 
@@ -1053,7 +954,7 @@ DELIMITER ;
 --- Review Triggers ---
 --- Review Trigger 1 ---
 -- Ensure that a review can only be created if the ticket is activated
--- This is done using a trigger before inserting a new review
+
 DELIMITER $$
 
 CREATE TRIGGER check_ticket_activation
@@ -1071,6 +972,46 @@ IF is_active = FALSE THEN
         SET MESSAGE_TEXT = 'Cannot review with inactive ticket.';
     END IF;
 END$$
+
+DELIMITER ;
+
+
+-- Review Trigger 2 ---
+-- Ensure that the performance belongs to the same event as the ticket and ticket is activated
+
+DELIMITER $$
+
+CREATE TRIGGER check_review_validity
+BEFORE INSERT ON review
+FOR EACH ROW
+BEGIN
+    DECLARE ticket_event INT;
+    DECLARE performance_event INT;
+    DECLARE is_activated BOOLEAN;
+
+    -- Πάρε το event στο οποίο ανήκει το εισιτήριο και αν είναι ενεργοποιημένο
+    SELECT event_ID, activated_status INTO ticket_event, is_activated
+    FROM ticket
+    WHERE ticket_ID = NEW.ticket_ID;
+
+    -- Πάρε το event στο οποίο ανήκει το performance
+    SELECT event_ID INTO performance_event
+    FROM performances
+    WHERE performance_ID = NEW.performance_ID;
+
+    -- Έλεγχος 1: Το εισιτήριο πρέπει να είναι ενεργοποιημένο
+    IF is_activated = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'You cannot review a performance unless your ticket is activated.';
+    END IF;
+
+    -- Έλεγχος 2: Το performance πρέπει να ανήκει στο event του εισιτηρίου
+    IF ticket_event <> performance_event THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'The performance you are trying to review does not belong to the event of your ticket.';
+    END IF;
+
+END $$
 
 DELIMITER ;
 
@@ -1102,6 +1043,9 @@ END $$
 
 DELIMITER ;
 
+--- Resale Triggers ---
+--- Resale Trigger 1 ---
+-- Check if the ticket is sold out before allowing resale
 DELIMITER $$
 
 CREATE TRIGGER trg_check_soldout_before_resale
