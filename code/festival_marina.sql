@@ -718,34 +718,28 @@ DELIMITER ;
 
 DELIMITER $$
 
-CREATE TRIGGER prevent_no_break_between_performances
+DELIMITER $$
+CREATE TRIGGER check_performance_overlap
 BEFORE INSERT ON performances
 FOR EACH ROW
 BEGIN
     DECLARE conflict_count INT;
 
-    SELECT COUNT(*) INTO conflict_count
+    SELECT COUNT(*)
+    INTO conflict_count
     FROM performances
     WHERE
         building_ID = NEW.building_ID
-        -- AND event_ID = NEW.event_ID
+
         AND (
-            -- Η νέα έναρξη είναι πριν από 5 λεπτά μετά το τέλος υπάρχουσας
-            NEW.performance_start_time < performance_end_time + INTERVAL 4 MINUTE
-            AND
-            NEW.performance_start_time >= performance_start_time
-
+            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE  )
             OR
-
-            -- Η νέα λήξη είναι μετά από 5 λεπτά πριν την αρχή υπάρχουσας
-            NEW.performance_end_time > performance_start_time - INTERVAL 4 MINUTE
-            AND
-            NEW.performance_end_time <= performance_end_time
+            (NEW.performance_end_time BETWEEN performance_start_time -  INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE )
         );
 
     IF conflict_count > 0 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'There must be at least a 5-minute break between performances.';
+        SET MESSAGE_TEXT = 'Conflict with another performance in the same building, same day, time range +/-5 minutes';
     END IF;
 END$$
 

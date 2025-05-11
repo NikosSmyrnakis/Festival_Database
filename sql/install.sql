@@ -611,9 +611,9 @@ BEGIN
     FROM performances
     WHERE
         building_ID = NEW.building_ID
-        AND event_ID = NEW.event_ID
+
         AND (
-            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 1 SECOND AND performance_end_time + INTERVAL 1 SECOND)
+            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 5 MINUTES - INTERVAL 1 SECOND AND performance_end_time + INTERVAL 5 MINUTES + INTERVAL 1 SECOND)
             OR
             (NEW.performance_end_time BETWEEN performance_start_time - INTERVAL 1 SECOND AND performance_end_time + INTERVAL 1 SECOND)
         );
