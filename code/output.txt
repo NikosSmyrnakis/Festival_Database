@@ -1,2 +1,0 @@
-artist_ID	artist_name	festival_ID	warm_up_count
-24	Frank Love	7	3

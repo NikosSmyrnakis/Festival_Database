@@ -182,6 +182,9 @@ for group_id in group_ids:
 
 
 # === Events: για κάθε μέρα του φεστιβάλ (0 έως duration - 1) ===
+import random
+from datetime import datetime, timedelta
+
 event_ids = []
 event_capacities = []
 for fid in festival_ids:
@@ -190,7 +193,6 @@ for fid in festival_ids:
     duration, starting_date = cursor.fetchone()
     
     for festival_day in range(1, duration + 1):
-        #for building_id in random.sample(building_ids, k=random.randint(len(building_ids)-2, len(building_ids))):
         end_time = "08:00:00"
         for _ in range(random.randint(1, 4)):  # number of events per day
             for building_id in random.sample(building_ids, k=random.randint(1, 3)):
@@ -201,9 +203,27 @@ for fid in festival_ids:
                 # Combine the date and time
                 start_datetime = datetime.combine(starting_date, datetime.strptime(start_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
                 end_datetime = datetime.combine(starting_date, datetime.strptime(end_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
+
+                # Check for any existing events in the same building on the same day
+                cursor.execute("""
+                    SELECT event_start_time, event_end_time
+                    FROM events
+                    WHERE building_ID = %s AND festival_day = %s
+                """, (building_id, festival_day))
+
+                existing_events = cursor.fetchall()
+
+                # If there are conflicts, adjust start time by adding 10 minutes to the end time of the conflicting event
+                for event in existing_events:
+                    existing_start_time, existing_end_time = event
+                    if start_datetime < existing_end_time + timedelta(minutes=5):  # There is a conflict
+                        start_datetime = existing_end_time + timedelta(minutes=10)
+                        end_datetime = start_datetime + timedelta(minutes=random.randint(181, 220))  # Recalculate end time
+
                 vip_total = random.randint(5, 10)
                 backstage_total = random.randint(5, 10)
                 general_total = random.randint(80, 100)
+
                 # Insert event into the events table
                 cursor.execute("""
                     INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID, VIP_total, backstage_total, general_total)
@@ -219,8 +239,49 @@ for fid in festival_ids:
                     backstage_total,
                     general_total
                 ))
+
                 event_ids.append(cursor.lastrowid)
                 event_capacities.append(vip_total + backstage_total + general_total)
+
+# event_ids = []
+# event_capacities = []
+# for fid in festival_ids:
+#     # Fetch festival's duration and starting date
+#     cursor.execute("SELECT duration, starting_date FROM festival WHERE festival_ID = %s", (fid,))
+#     duration, starting_date = cursor.fetchone()
+    
+#     for festival_day in range(1, duration + 1):
+#         #for building_id in random.sample(building_ids, k=random.randint(len(building_ids)-2, len(building_ids))):
+#         end_time = "08:00:00"
+#         for _ in range(random.randint(1, 4)):  # number of events per day
+#             for building_id in random.sample(building_ids, k=random.randint(1, 3)):
+#                 # Calculate start and end times
+#                 start_time = (datetime.strptime(end_time, "%H:%M:%S") + timedelta(minutes=random.randint(20, 100))).time().strftime("%H:%M:%S")
+#                 end_time = (datetime.strptime(start_time, "%H:%M:%S") + timedelta(minutes=random.randint(181, 220))).time().strftime("%H:%M:%S")
+
+#                 # Combine the date and time
+#                 start_datetime = datetime.combine(starting_date, datetime.strptime(start_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
+#                 end_datetime = datetime.combine(starting_date, datetime.strptime(end_time, "%H:%M:%S").time()) + timedelta(days=festival_day-1)
+#                 vip_total = random.randint(5, 10)
+#                 backstage_total = random.randint(5, 10)
+#                 general_total = random.randint(80, 100)
+#                 # Insert event into the events table
+#                 cursor.execute("""
+#                     INSERT INTO events (festival_ID, event_name, festival_day, event_start_time, event_end_time, building_ID, VIP_total, backstage_total, general_total)
+#                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+#                 """, (
+#                     fid,
+#                     f"{fake.word().capitalize()} Concert",
+#                     festival_day,
+#                     start_datetime,
+#                     end_datetime,
+#                     building_id,
+#                     vip_total,
+#                     backstage_total,
+#                     general_total
+#                 ))
+#                 event_ids.append(cursor.lastrowid)
+#                 event_capacities.append(vip_total + backstage_total + general_total)
 
 # === 4. Personel ===
 personel_ids = []

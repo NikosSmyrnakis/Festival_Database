@@ -1,4 +1,4 @@
---- === TABLES CREATION === ---
+-- == TABLES CREATION == --
 
 -- Festival
 -- Stores basic information about each festival
@@ -42,6 +42,8 @@ CREATE TABLE building (
     max_capacity INT NOT NULL
 );
 
+-- Technical Equipment
+-- Stores information about technical equipment wanted from buildings
 CREATE TABLE technical_equipment (
     technical_equipment_ID INT PRIMARY KEY AUTO_INCREMENT,
     building_ID INT,
@@ -78,6 +80,8 @@ CREATE TABLE `group` ( -- renamed from group to avoid SQL keyword conflict
 
     );    
 
+-- Genre
+-- Represents the genre of an artist or group
 CREATE TABLE genre (
     genre_ID INT PRIMARY KEY AUTO_INCREMENT,
     genre_name VARCHAR(100) NOT NULL,
@@ -194,8 +198,7 @@ CREATE TABLE ticket (
 -- Buyer
 -- Represents users interested in buying tickets
 CREATE TABLE buyer (
-    buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT,
+    buyer_ID INT PRIMARY KEY,
     FOREIGN KEY (buyer_ID) REFERENCES visitor(visitor_ID)
 );
 
@@ -203,8 +206,7 @@ CREATE TABLE buyer (
 -- Seller
 -- Represents users who are selling or listing tickets for resale
 CREATE TABLE seller (
-    seller_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT,
+    seller_ID INT PRIMARY KEY ,
     FOREIGN KEY (seller_ID) REFERENCES visitor(visitor_ID)
 );
 
@@ -218,8 +220,8 @@ CREATE TABLE resale_queue (
     ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
     ticket_ID INT NULL,
     listed_at TIMESTAMP ,
-    FOREIGN KEY (buyer_ID) REFERENCES buyer(buyer_ID),
-    FOREIGN KEY (seller_ID) REFERENCES seller(seller_ID),
+    FOREIGN KEY (buyer_ID) REFERENCES visitor(visitor_ID),
+    FOREIGN KEY (seller_ID) REFERENCES visitor(visitor_ID),
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
 
@@ -272,8 +274,8 @@ CREATE TABLE photo(
     FOREIGN KEY (technical_equipment_ID) REFERENCES technical_equipment(technical_equipment_ID)
 );
 
--- === INDEXES === ---
--- nikos
+-- == INDEXES == --
+
 CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID);
 CREATE INDEX idx_artist_name ON artist(artist_name);
 CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID);
@@ -287,7 +289,6 @@ CREATE INDEX idx_genre_group ON genre(group_ID);
 CREATE INDEX idx_role_event_role ON role_of_personel_on_event(event_ID, role);
 CREATE INDEX idx_group_members_artist ON group_members(artist_ID);
 CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name);
--- marina 
 CREATE INDEX idx_ticket_purchase_year_price ON ticket(purchase_date, purchase_price);
 CREATE INDEX idx_perf_type_artist_event ON performances(performance_type, artist_ID, event_ID);
 CREATE INDEX idx_artist_dob ON artist(artist_date_of_birth);
@@ -297,8 +298,7 @@ CREATE INDEX idx_events_start_time ON events(event_start_time);
 CREATE INDEX idx_festival_location_continent ON festival_location(festival_ID, continent);
 
 
---- === TRIGGERS === ---
--- update barcode after inserting a new ticket
+-- == TRIGGERS == --
 
 
 
@@ -316,7 +316,7 @@ END$$
 
 DELIMITER ;
 
---- Prevent Performance Deletion Trigger
+-- Prevent Performance Deletion Trigger
 DELIMITER $$
 
 CREATE TRIGGER prevent_performance_deletion
@@ -329,11 +329,9 @@ END$$
 
 DELIMITER ;
 
-
-
---- Ticket Triggers ---
---- Ticket Trigger 1 ---
---- Check if the ticket can be sold based on the event's capacity and ticket type limits
+-- Ticket Triggers --
+-- Ticket Trigger 1 --
+-- Check if the ticket can be sold based on the event's capacity and ticket type limits
 
 DELIMITER $$
 
@@ -398,8 +396,8 @@ END $$
 
 DELIMITER ;
 
---- Ticket Trigger 2 ---
---- When a new ticket is created, fill in visitor data from the visitor table
+-- Ticket Trigger 2 --
+-- When a new ticket is created, fill in visitor data from the visitor table
 DELIMITER $$
 
 CREATE TRIGGER fill_ticket_visitor_data
@@ -429,48 +427,40 @@ END$$
 DELIMITER ;
 
 
-
-
---- Visitor Triggers --- 
-
---- Visitor Trigger 2 --- 
--- When a new visitor is created, create a corresponding buyer entry
--- with the same visitor_ID
--- This is to ensure that every visitor can be a buyer or seller
--- without needing to create a new entry in the buyer table
-
+-- Resale Triggers --
+-- Resale Trigger 1 --
+-- Trigger to check that the ticket is not activated before resale
 DELIMITER $$
-CREATE TRIGGER create_buyer_after_visitor
-AFTER INSERT ON visitor
+
+-- Trigger to check that the ticket is not activated before resale
+CREATE TRIGGER check_ticket_activation_before_resale
+BEFORE INSERT ON resale_queue
 FOR EACH ROW
 BEGIN
-    INSERT INTO buyer (visitor_ID)
-    VALUES (NEW.visitor_ID);
+    -- Δηλώνουμε τη μεταβλητή ticket_activated στο αρχή του trigger
+    DECLARE ticket_activated BOOLEAN;
+
+    -- Ελέγχουμε αν ο πωλητής είναι ορισμένος και αν το ticket_ID δεν είναι NULL
+    IF NEW.seller_ID IS NOT NULL AND NEW.ticket_ID IS NOT NULL THEN
+        -- Ελέγχουμε την κατάσταση του εισιτηρίου στον πίνακα ticket
+        SELECT activated_status INTO ticket_activated
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+
+        -- Αν το εισιτήριο είναι ενεργοποιημένο (activated_status = TRUE), επιστρέφουμε σφάλμα
+        IF ticket_activated = TRUE THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Cannot resell an activated ticket.';
+        END IF;
+    END IF;
 END$$
+
 DELIMITER ;
 
---- Visitor Trigger 3 ---
--- When a new visitor is created, create a corresponding seller entry
--- with the same visitor_ID
--- This is to ensure that every visitor can be a buyer or seller
--- without needing to create a new entry in the seller table
+-- Resale Trigger 2 --
+--  Matching Seller and Buyer and Updating Ticket
 
 DELIMITER $$
-CREATE TRIGGER create_seller_after_visitor
-AFTER INSERT ON visitor
-FOR EACH ROW
-BEGIN
-    INSERT INTO seller (visitor_ID)
-    VALUES (NEW.visitor_ID);
-END$$
-DELIMITER ;
-
-DELIMITER $$
-
---- Resale Triggers ---
---- Resale Trigger 1 ---
--- When a ticket is activated, check if it can be matched with a buyer/seller
--- If a match is found, insert into temp_resale_matches and delete from resale_queue
 
 CREATE TRIGGER match_resale_after_insert
 BEFORE INSERT ON resale_queue
@@ -484,9 +474,10 @@ BEGIN
     DECLARE v_price DECIMAL(10,2);
     DECLARE v_payment_method ENUM('debit_card', 'credit_card', 'I-BAN');
     DECLARE v_activated BOOLEAN;
-    -- If new row is a buyer
+
+    -- Εάν ο αγοραστής (buyer) είναι ορισμένος, κάνε την αντιστοίχιση με τον πωλητή
     IF NEW.buyer_ID IS NOT NULL THEN
-        -- Match με διαθέσιμο seller για ίδιο ticket_ID
+        -- Αντιστοίχιση με διαθέσιμο seller για το ίδιο ticket_ID
         SELECT seller_ID INTO matched_seller
         FROM resale_queue
         WHERE ticket_ID = NEW.ticket_ID
@@ -498,13 +489,15 @@ BEGIN
             -- Εισαγωγή στο temp_resale_matches
             INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
             VALUES (NEW.buyer_ID, matched_seller, NEW.ticket_ID);
+
             -- Διαγραφή των matched εγγραφών από resale_queue
             SET NEW.resale_ID = NULL;
         END IF;
     END IF;
-    -- If new row is a seller
+
+    -- Εάν ο πωλητής (seller) είναι ορισμένος, κάνε την αντιστοίχιση με τον αγοραστή
     IF NEW.seller_ID IS NOT NULL THEN
-        -- Match με διαθέσιμο buyer για ίδιο ticket_ID
+        -- Αντιστοίχιση με διαθέσιμο buyer για το ίδιο ticket_ID
         SELECT buyer_ID INTO matched_buyer
         FROM resale_queue
         WHERE ticket_ID = NEW.ticket_ID
@@ -516,25 +509,23 @@ BEGIN
             -- Εισαγωγή στο temp_resale_matches
             INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
             VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
+
             -- Διαγραφή των matched εγγραφών από resale_queue
             SET NEW.resale_ID = NULL;
 
-            -- update the ticket table
-
-            -- Get original ticket info
-            SELECT 
-                event_ID, ticket_type, purchase_date, purchase_price, 
-                payment_method, activated_status
-            INTO 
-                v_event_ID, v_ticket_type, v_purchase_date, v_price,
+            -- Ενημέρωση του πίνακα ticket με τον νέο αγοραστή
+            -- Λήψη των αρχικών πληροφοριών του εισιτηρίου
+            SELECT event_ID, ticket_type, purchase_date, purchase_price, 
+                   payment_method, activated_status
+            INTO v_event_ID, v_ticket_type, v_purchase_date, v_price,
                 v_payment_method, v_activated
             FROM ticket
             WHERE ticket_ID = NEW.ticket_ID;
 
-            -- Delete old ticket
+            -- Διαγραφή του παλιού εισιτηρίου
             DELETE FROM ticket WHERE ticket_ID = NEW.ticket_ID;
 
-            -- Insert new ticket with buyer ID
+            -- Εισαγωγή του νέου εισιτηρίου με τον αγοραστή
             INSERT INTO ticket (
                 event_ID, visitor_ID, ticket_type, purchase_date,
                 purchase_price, payment_method, activated_status
@@ -543,15 +534,128 @@ BEGIN
                 v_event_ID, matched_buyer, v_ticket_type, v_purchase_date,
                 v_price, v_payment_method, v_activated
             );
-
         END IF;
     END IF;
 
 END$$
+
 DELIMITER ;
 
---- Event Triggers ---
---- Event Trigger 1 ---
+
+-- Resale Trigger 3 -- 
+-- When a new resale entry of a buyer is created, add the buyer to the buyer table 
+-- When a new resale entry of a seller is created, add the seller to the seller table
+DELIMITER $$
+
+CREATE TRIGGER create_buyer_or_seller_after_visitor
+AFTER INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    -- Declare variables to check if the buyer or seller already exists
+    DECLARE existing_buyer INT;
+    DECLARE existing_seller INT;
+
+    -- If buyer_ID is not NULL and it does not exist in the buyer table, insert it into the buyer table
+    IF NEW.buyer_ID IS NOT NULL THEN
+        -- Check if the buyer_ID already exists in the buyer table
+        SELECT COUNT(*)
+        INTO existing_buyer
+        FROM buyer
+        WHERE buyer_ID = NEW.buyer_ID;
+
+        -- If the buyer doesn't exist, insert it into the buyer table
+        IF existing_buyer = 0 THEN
+            INSERT INTO buyer (buyer_ID)
+            VALUES (NEW.buyer_ID);  -- Use NEW.buyer_ID as buyer_ID
+        END IF;
+    END IF;
+
+    -- If seller_ID is not NULL and it does not exist in the seller table, insert it into the seller table
+    IF NEW.seller_ID IS NOT NULL THEN
+        -- Check if the seller_ID already exists in the seller table
+        SELECT COUNT(*)
+        INTO existing_seller
+        FROM seller
+        WHERE seller_ID = NEW.seller_ID;
+
+        -- If the seller doesn't exist, insert it into the seller table
+        IF existing_seller = 0 THEN
+            INSERT INTO seller (seller_ID)
+            VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as seller_ID
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+
+
+-- Resale Trigger 4 --
+-- Check if the ticket is sold out before allowing resale
+DELIMITER $$
+
+CREATE TRIGGER trg_check_soldout_before_resale
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE event_id_val INT;
+    DECLARE ticket_type_val ENUM('general_admission', 'VIP', 'backstage');
+    DECLARE total_available INT;
+    DECLARE sold_count INT;
+    DECLARE msg_text VARCHAR(255);
+
+    -- Περίπτωση 1: υπάρχει ticket_ID → πάρε event_ID και ticket_type από τον πίνακα ticket
+    IF NEW.ticket_ID IS NOT NULL THEN
+        SELECT event_ID, ticket_type
+        INTO event_id_val, ticket_type_val
+        FROM ticket
+        WHERE ticket_ID = NEW.ticket_ID;
+
+    -- Περίπτωση 2: δεν υπάρχει ticket_ID αλλά υπάρχει event_name και ticket_type
+    ELSEIF NEW.event_name IS NOT NULL AND NEW.ticket_type IS NOT NULL THEN
+        SELECT event_ID
+        INTO event_id_val
+        FROM events
+        WHERE event_name = NEW.event_name
+        LIMIT 1;  -- για ασφάλεια σε διπλότυπα ονόματα
+
+        SET ticket_type_val = NEW.ticket_type;
+
+    -- Περίπτωση 3: δεν υπάρχουν αρκετά στοιχεία για έλεγχο
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Not enough information to check resale availability.';
+    END IF;
+
+    -- Ανάλογα με τον τύπο εισιτηρίου, βρες το σύνολο διαθέσιμων
+    IF ticket_type_val = 'VIP' THEN
+        SELECT VIP_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSEIF ticket_type_val = 'backstage' THEN
+        SELECT backstage_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    ELSE
+        SELECT general_total INTO total_available FROM events WHERE event_ID = event_id_val;
+    END IF;
+
+    -- Πόσα έχουν πουληθεί για το event και τον τύπο
+    SELECT COUNT(*) INTO sold_count
+    FROM ticket
+    WHERE event_ID = event_id_val AND ticket_type = ticket_type_val;
+
+    -- Έλεγχος αν επιτρέπεται το resale
+    IF sold_count < total_available THEN
+        SET msg_text = CONCAT('Resale not allowed: ', ticket_type_val, ' tickets are not sold out yet.');
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = msg_text;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+
+-- Event Triggers --
+-- Event Trigger 1 --
 -- Ensure that the festival_day is within the festival duration
 DELIMITER $$
 
@@ -574,8 +678,8 @@ END$$
 DELIMITER ;
 
 
---- Event Trigger 2 ---
---- Event building overlap prevention
+-- Event Trigger 2 --
+-- Event building overlap prevention
 DELIMITER $$
 
 CREATE TRIGGER prevent_event_time_conflict_same_building
@@ -612,8 +716,8 @@ DELIMITER ;
 
 
 
---- Gerne Triggers ---
---- Genre Trigger 1 ---
+-- Gerne Triggers --
+-- Genre Trigger 1 --
 -- Ensure that each genre is linked to either one artist or one group, but not both or neither
 DELIMITER $$
 
@@ -632,40 +736,34 @@ DELIMITER ;
 
 
 
----Performance Triggers---
---- Performance Trigger 1 ---
+--Performance Triggers--
+-- Performance Trigger 1 --
 -- Ensure a minimum 5-minute break between performances of the same event in the same building
 
 DELIMITER $$
 
-CREATE TRIGGER prevent_no_break_between_performances
+DELIMITER $$
+CREATE TRIGGER check_performance_overlap
 BEFORE INSERT ON performances
 FOR EACH ROW
 BEGIN
     DECLARE conflict_count INT;
 
-    SELECT COUNT(*) INTO conflict_count
+    SELECT COUNT(*)
+    INTO conflict_count
     FROM performances
     WHERE
         building_ID = NEW.building_ID
-        AND event_ID = NEW.event_ID
+
         AND (
-            -- Η νέα έναρξη είναι πριν από 5 λεπτά μετά το τέλος υπάρχουσας
-            NEW.performance_start_time < performance_end_time + INTERVAL 5 MINUTE
-            AND
-            NEW.performance_start_time >= performance_start_time
-
+            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE  )
             OR
-
-            -- Η νέα λήξη είναι μετά από 5 λεπτά πριν την αρχή υπάρχουσας
-            NEW.performance_end_time > performance_start_time - INTERVAL 5 MINUTE
-            AND
-            NEW.performance_end_time <= performance_end_time
+            (NEW.performance_end_time BETWEEN performance_start_time -  INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE )
         );
 
     IF conflict_count > 0 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'There must be at least a 5-minute break between performances.';
+        SET MESSAGE_TEXT = 'Conflict with another performance in the same building, same day, time range +/-5 minutes';
     END IF;
 END$$
 
@@ -673,8 +771,8 @@ DELIMITER ;
 
 
 
---- Performance Trigger 2 ---
---- Check for consecutive years of participation for artists
+-- Performance Trigger 2 --
+-- Check for consecutive years of participation for artists
 DELIMITER $$
 
 CREATE TRIGGER trg_check_consecutive_years_artists
@@ -739,8 +837,8 @@ DELIMITER ;
 
 
 
---- Performance Trigger 3 ---
---- Check for consecutive years of participation for groups
+-- Performance Trigger 3 --
+-- Check for consecutive years of participation for groups
 DELIMITER $$
 
 CREATE TRIGGER trg_check_consecutive_years_groups
@@ -805,8 +903,8 @@ DELIMITER ;
 
 
 
---- Performance Trigger 5 ---
---- Check for overlapping performances for the same artist or group
+-- Performance Trigger 5 --
+-- Check for overlapping performances for the same artist or group
 DELIMITER $$
 
 CREATE TRIGGER prevent_artist_group_overlap
@@ -834,8 +932,8 @@ END$$
 
 DELIMITER ;
 
---- Performance Trigger 6 ---
---- Check for overlapping performances for the same artist or group on update
+-- Performance Trigger 6 --
+-- Check for overlapping performances for the same artist or group on update
 DELIMITER $$
 
 CREATE TRIGGER prevent_artist_group_overlap_update
@@ -865,12 +963,8 @@ END$$
 DELIMITER ;
 
 
-
-
-
-
---- Ticket Triggers ---
---- Ticket Trigger 1 ---
+-- Ticket Triggers --
+-- Ticket Trigger 1 --
 -- VIP ticket limit check
 -- Ensure that the number of VIP tickets does not exceed 10% of total tickets for the event
 -- This is done using a trigger before inserting a new ticket
@@ -902,7 +996,7 @@ END$$
 
 DELIMITER ;
 
--- Ticket Trigger 2 ---
+-- Ticket Trigger 2 --
 -- Prevent duplicate tickets for the same visitor and event
 DELIMITER $$
 
@@ -925,8 +1019,8 @@ END$$
 
 DELIMITER ;
 
--- Group Triggers ---
--- Group Trigger 1 ---
+-- Group Triggers --
+-- Group Trigger 1 --
 -- When a new group member is added, update the member_names field in the group table
 
 DELIMITER $$
@@ -951,8 +1045,8 @@ END$$
 DELIMITER ;
 
 
---- Review Triggers ---
---- Review Trigger 1 ---
+-- Review Triggers --
+-- Review Trigger 1 --
 -- Ensure that a review can only be created if the ticket is activated
 
 DELIMITER $$
@@ -976,7 +1070,7 @@ END$$
 DELIMITER ;
 
 
--- Review Trigger 2 ---
+-- Review Trigger 2 --
 -- Ensure that the performance belongs to the same event as the ticket and ticket is activated
 
 DELIMITER $$
@@ -1015,8 +1109,8 @@ END $$
 
 DELIMITER ;
 
---- role_of_personel_on_event Triggers ---
---- Role Trigger 1 ---
+-- role_of_personel_on_event Triggers --
+-- Role Trigger 1 --
 -- Ensure that the same personel cannot have multiple roles in the same event
 DELIMITER $$
 
@@ -1043,74 +1137,14 @@ END $$
 
 DELIMITER ;
 
---- Resale Triggers ---
---- Resale Trigger 1 ---
--- Check if the ticket is sold out before allowing resale
-DELIMITER $$
-
-CREATE TRIGGER trg_check_soldout_before_resale
-BEFORE INSERT ON resale_queue
-FOR EACH ROW
-BEGIN
-    DECLARE event_id_val INT;
-    DECLARE ticket_type_val ENUM('general_admission', 'VIP', 'backstage');
-    DECLARE total_available INT;
-    DECLARE sold_count INT;
-    DECLARE msg_text VARCHAR(255);
-
-    -- Περίπτωση 1: υπάρχει ticket_ID → πάρε event_ID και ticket_type από τον πίνακα ticket
-    IF NEW.ticket_ID IS NOT NULL THEN
-        SELECT event_ID, ticket_type
-        INTO event_id_val, ticket_type_val
-        FROM ticket
-        WHERE ticket_ID = NEW.ticket_ID;
-
-    -- Περίπτωση 2: δεν υπάρχει ticket_ID αλλά υπάρχει event_name και ticket_type
-    ELSEIF NEW.event_name IS NOT NULL AND NEW.ticket_type IS NOT NULL THEN
-        SELECT event_ID
-        INTO event_id_val
-        FROM events
-        WHERE event_name = NEW.event_name
-        LIMIT 1;  -- για ασφάλεια σε διπλότυπα ονόματα
-
-        SET ticket_type_val = NEW.ticket_type;
-
-    -- Περίπτωση 3: δεν υπάρχουν αρκετά στοιχεία για έλεγχο
-    ELSE
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Not enough information to check resale availability.';
-    END IF;
-
-    -- Ανάλογα με τον τύπο εισιτηρίου, βρες το σύνολο διαθέσιμων
-    IF ticket_type_val = 'VIP' THEN
-        SELECT VIP_total INTO total_available FROM events WHERE event_ID = event_id_val;
-    ELSEIF ticket_type_val = 'backstage' THEN
-        SELECT backstage_total INTO total_available FROM events WHERE event_ID = event_id_val;
-    ELSE
-        SELECT general_total INTO total_available FROM events WHERE event_ID = event_id_val;
-    END IF;
-
-    -- Πόσα έχουν πουληθεί για το event και τον τύπο
-    SELECT COUNT(*) INTO sold_count
-    FROM ticket
-    WHERE event_ID = event_id_val AND ticket_type = ticket_type_val;
-
-    -- Έλεγχος αν επιτρέπεται το resale
-    IF sold_count < total_available THEN
-        SET msg_text = CONCAT('Resale not allowed: ', ticket_type_val, ' tickets are not sold out yet.');
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = msg_text;
-    END IF;
-
-END$$
-
-DELIMITER ;
 
 
 
---- === CONSTRAINTS === ---
---- Resale Constraints ---
---- Resale Constraint 1 ---
+
+
+-- == CONSTRAINTS == --
+-- Resale Constraints --
+-- Resale Constraint 1 --
 ALTER TABLE resale_queue
 ADD CONSTRAINT chk_seller_or_buyer CHECK (
     (
@@ -1127,16 +1161,39 @@ ADD CONSTRAINT chk_seller_or_buyer CHECK (
 );
 
 
---- Resale Constraint 2 ---
+-- Resale Constraint 2 --
 ALTER TABLE resale_queue
 ADD CONSTRAINT chk_one_side_only CHECK (
     (buyer_ID IS NOT NULL AND seller_ID IS NULL)
     OR
     (buyer_ID IS NULL AND seller_ID IS NOT NULL)
 );
---- Event Constraints ---
---- Ο έλεγχος για  παράλληλα event γίνεται με trigger ---
+-- Event Constraints --
+-- Ο έλεγχος για  παράλληλα event γίνεται με trigger --
 
 
 
+-- == CASCADES == --
+ALTER TABLE role_of_personel_on_event
+ADD CONSTRAINT fk_role_personel
+FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID)
+ON DELETE CASCADE;
+
+
+ALTER TABLE review
+ADD CONSTRAINT fk_review_ticket
+FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+ON DELETE CASCADE;
+
+
+ALTER TABLE role_of_personel_on_event
+ADD CONSTRAINT fk_role_event
+FOREIGN KEY (event_ID) REFERENCES events(event_ID)
+ON DELETE CASCADE;
+
+
+ALTER TABLE group_members
+ADD CONSTRAINT fk_group_members_group
+FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
+ON DELETE CASCADE;
 
