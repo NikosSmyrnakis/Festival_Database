@@ -462,135 +462,6 @@ DELIMITER ;
 -- Resale Trigger 2 --
 --  Matching Seller and Buyer and Updating Ticket
 
-DELIMITER $$
-
-CREATE TRIGGER match_resale_after_insert
-BEFORE INSERT ON resale_queue
-FOR EACH ROW
-BEGIN
-    DECLARE matched_seller INT;
-    DECLARE matched_buyer INT;
-    DECLARE v_event_ID INT;
-    DECLARE v_ticket_type ENUM('general_admission', 'VIP', 'backstage');
-    DECLARE v_purchase_date DATE;
-    DECLARE v_price DECIMAL(10,2);
-    DECLARE v_payment_method ENUM('debit_card', 'credit_card', 'I-BAN');
-    DECLARE v_activated BOOLEAN;
-
-    -- Εάν ο αγοραστής (buyer) είναι ορισμένος, κάνε την αντιστοίχιση με τον πωλητή
-    IF NEW.buyer_ID IS NOT NULL THEN
-        -- Αντιστοίχιση με διαθέσιμο seller για το ίδιο ticket_ID
-        SELECT seller_ID INTO matched_seller
-        FROM resale_queue
-        WHERE ticket_ID = NEW.ticket_ID
-          AND seller_ID IS NOT NULL
-          AND buyer_ID IS NULL
-        LIMIT 1;
-
-        IF matched_seller IS NOT NULL THEN
-            -- Εισαγωγή στο temp_resale_matches
-            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
-            VALUES (NEW.buyer_ID, matched_seller, NEW.ticket_ID);
-
-            -- Διαγραφή των matched εγγραφών από resale_queue
-            SET NEW.resale_ID = NULL;
-        END IF;
-    END IF;
-
-    -- Εάν ο πωλητής (seller) είναι ορισμένος, κάνε την αντιστοίχιση με τον αγοραστή
-    IF NEW.seller_ID IS NOT NULL THEN
-        -- Αντιστοίχιση με διαθέσιμο buyer για το ίδιο ticket_ID
-        SELECT buyer_ID INTO matched_buyer
-        FROM resale_queue
-        WHERE ticket_ID = NEW.ticket_ID
-          AND buyer_ID IS NOT NULL
-          AND seller_ID IS NULL
-        LIMIT 1;
-
-        IF matched_buyer IS NOT NULL THEN
-            -- Εισαγωγή στο temp_resale_matches
-            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
-            VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
-
-            -- Διαγραφή των matched εγγραφών από resale_queue
-            SET NEW.resale_ID = NULL;
-
-            -- Ενημέρωση του πίνακα ticket με τον νέο αγοραστή
-            -- Λήψη των αρχικών πληροφοριών του εισιτηρίου
-            SELECT event_ID, ticket_type, purchase_date, purchase_price, 
-                   payment_method, activated_status
-            INTO v_event_ID, v_ticket_type, v_purchase_date, v_price,
-                v_payment_method, v_activated
-            FROM ticket
-            WHERE ticket_ID = NEW.ticket_ID;
-
-            -- Διαγραφή του παλιού εισιτηρίου
-            DELETE FROM ticket WHERE ticket_ID = NEW.ticket_ID;
-
-            -- Εισαγωγή του νέου εισιτηρίου με τον αγοραστή
-            INSERT INTO ticket (
-                event_ID, visitor_ID, ticket_type, purchase_date,
-                purchase_price, payment_method, activated_status
-            )
-            VALUES (
-                v_event_ID, matched_buyer, v_ticket_type, v_purchase_date,
-                v_price, v_payment_method, v_activated
-            );
-        END IF;
-    END IF;
-
-END$$
-
-DELIMITER ;
-
-
--- Resale Trigger 3 -- 
--- When a new resale entry of a buyer is created, add the buyer to the buyer table 
--- When a new resale entry of a seller is created, add the seller to the seller table
-DELIMITER $$
-
-CREATE TRIGGER create_buyer_or_seller_after_visitor
-AFTER INSERT ON resale_queue
-FOR EACH ROW
-BEGIN
-    -- Declare variables to check if the buyer or seller already exists
-    DECLARE existing_buyer INT;
-    DECLARE existing_seller INT;
-
-    -- If buyer_ID is not NULL and it does not exist in the buyer table, insert it into the buyer table
-    IF NEW.buyer_ID IS NOT NULL THEN
-        -- Check if the buyer_ID already exists in the buyer table
-        SELECT COUNT(*)
-        INTO existing_buyer
-        FROM buyer
-        WHERE buyer_ID = NEW.buyer_ID;
-
-        -- If the buyer doesn't exist, insert it into the buyer table
-        IF existing_buyer = 0 THEN
-            INSERT INTO buyer (buyer_ID)
-            VALUES (NEW.buyer_ID);  -- Use NEW.buyer_ID as buyer_ID
-        END IF;
-    END IF;
-
-    -- If seller_ID is not NULL and it does not exist in the seller table, insert it into the seller table
-    IF NEW.seller_ID IS NOT NULL THEN
-        -- Check if the seller_ID already exists in the seller table
-        SELECT COUNT(*)
-        INTO existing_seller
-        FROM seller
-        WHERE seller_ID = NEW.seller_ID;
-
-        -- If the seller doesn't exist, insert it into the seller table
-        IF existing_seller = 0 THEN
-            INSERT INTO seller (seller_ID)
-            VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as seller_ID
-        END IF;
-    END IF;
-END$$
-
-DELIMITER ;
-
-
 
 
 -- Resale Trigger 4 --
@@ -656,6 +527,122 @@ END$$
 DELIMITER ;
 
 
+-- Resale Trigger 3 -- 
+-- When a new resale entry of a buyer is created, add the buyer to the buyer table 
+-- When a new resale entry of a seller is created, add the seller to the seller table
+DELIMITER $$
+
+CREATE TRIGGER create_buyer_or_seller_after_visitor
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    -- Declare variables to check if the buyer or seller already exists
+    DECLARE existing_buyer INT;
+    DECLARE existing_seller INT;
+
+    -- If buyer_ID is not NULL and it does not exist in the buyer table, insert it into the buyer table
+    IF NEW.buyer_ID IS NOT NULL THEN
+        -- Check if the buyer_ID already exists in the buyer table
+        SELECT COUNT(*)
+        INTO existing_buyer
+        FROM buyer
+        WHERE buyer_ID = NEW.buyer_ID;
+
+        -- If the buyer doesn't exist, insert it into the buyer table
+        IF existing_buyer = 0 THEN
+            INSERT INTO buyer (buyer_ID)
+            VALUES (NEW.buyer_ID);  -- Use NEW.buyer_ID as buyer_ID
+        END IF;
+    END IF;
+
+    -- If seller_ID is not NULL and it does not exist in the seller table, insert it into the seller table
+    IF NEW.seller_ID IS NOT NULL THEN
+        -- Check if the seller_ID already exists in the seller table
+        SELECT COUNT(*)
+        INTO existing_seller
+        FROM seller
+        WHERE seller_ID = NEW.seller_ID;
+
+        -- If the seller doesn't exist, insert it into the seller table
+        IF existing_seller = 0 THEN
+            INSERT INTO seller (seller_ID)
+            VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as seller_ID
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- Resale Trigger 2 --
+--  Matching Seller and Buyer and Updating Ticket
+
+DELIMITER $$
+
+CREATE TRIGGER match_resale_after_insert
+BEFORE INSERT ON resale_queue
+FOR EACH ROW
+BEGIN
+    DECLARE matched_seller INT;
+    DECLARE matched_buyer INT;
+
+    -- Εάν ο αγοραστής (buyer) είναι ορισμένος, κάνε την αντιστοίχιση με τον πωλητή
+    IF NEW.buyer_ID IS NOT NULL THEN
+        -- Βρες διαθέσιμο seller που δεν έχει ήδη γίνει match
+        SELECT seller_ID INTO matched_seller
+        FROM resale_queue
+        WHERE ticket_ID = NEW.ticket_ID
+          AND seller_ID IS NOT NULL
+          AND buyer_ID IS NULL
+          AND seller_ID NOT IN (
+              SELECT seller_ID FROM temp_resale_matches WHERE ticket_ID = NEW.ticket_ID
+          )
+        ORDER BY listed_at ASC
+        LIMIT 1;
+
+        IF matched_seller IS NOT NULL THEN
+            -- Εισαγωγή στο temp_resale_matches
+            UPDATE ticket
+            SET visitor_ID = NEW.buyer_ID
+            WHERE ticket_ID = NEW.ticket_ID;
+
+            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
+            VALUES (NEW.buyer_ID, matched_seller, NEW.ticket_ID);
+        END IF;
+    END IF;
+
+    -- Εάν ο πωλητής (seller) είναι ορισμένος, κάνε την αντιστοίχιση με τον αγοραστή
+    IF NEW.seller_ID IS NOT NULL THEN
+        -- Βρες διαθέσιμο buyer που δεν έχει ήδη γίνει match
+        SELECT buyer_ID INTO matched_buyer
+        FROM resale_queue
+        WHERE ticket_ID = NEW.ticket_ID
+          AND buyer_ID IS NOT NULL
+          AND seller_ID IS NULL
+          AND buyer_ID NOT IN (
+              SELECT buyer_ID FROM temp_resale_matches WHERE ticket_ID = NEW.ticket_ID
+          )
+        ORDER BY listed_at ASC
+        LIMIT 1;
+
+        IF matched_buyer IS NOT NULL THEN
+            -- Εισαγωγή στο temp_resale_matches
+            UPDATE ticket
+            SET visitor_ID = matched_buyer
+            WHERE ticket_ID = NEW.ticket_ID;
+
+            INSERT INTO temp_resale_matches (buyer_ID, seller_ID, ticket_ID)
+            VALUES (matched_buyer, NEW.seller_ID, NEW.ticket_ID);
+        END IF;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+
+
+
+
 -- Event Triggers --
 -- Event Trigger 1 --
 -- Ensure that the festival_day is within the festival duration
@@ -679,41 +666,6 @@ END$$
 
 DELIMITER ;
 
-
--- Event Trigger 2 --
--- Event building overlap prevention
-DELIMITER $$
-
-CREATE TRIGGER prevent_event_time_conflict_same_building
-BEFORE INSERT ON events
-FOR EACH ROW
-BEGIN
-    DECLARE conflict_count INT;
-
-    SELECT COUNT(*) INTO conflict_count
-    FROM events e
-    WHERE
-        e.building_ID = NEW.building_ID
-        AND DATE(e.event_start_time) = DATE(NEW.event_start_time) -- ίδια μέρα
-        AND (
-            -- Αν η νέα έναρξη είναι λιγότερο από 5 λεπτά μετά το τέλος υπάρχοντος
-            NEW.event_start_time < e.event_end_time + INTERVAL 5 MINUTE
-            AND NEW.event_start_time >= e.event_start_time
-
-            OR
-
-            -- Αν η νέα λήξη είναι λιγότερο από 5 λεπτά πριν την αρχή υπάρχοντος
-            NEW.event_end_time > e.event_start_time - INTERVAL 5 MINUTE
-            AND NEW.event_end_time <= e.event_end_time
-        );
-
-    IF conflict_count > 0 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot schedule two events in the same building on the same day with less than 5 minutes between them.';
-    END IF;
-END$$
-
-DELIMITER ;
 
 
 
@@ -758,9 +710,9 @@ BEGIN
         building_ID = NEW.building_ID
 
         AND (
-            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE  )
+            (NEW.performance_start_time BETWEEN performance_start_time - INTERVAL 301 SECOND AND performance_end_time + INTERVAL 299 SECOND  )
             OR
-            (NEW.performance_end_time BETWEEN performance_start_time -  INTERVAL 5 MINUTE AND performance_end_time + INTERVAL 5 MINUTE )
+            (NEW.performance_end_time BETWEEN performance_start_time -  INTERVAL 301 SECOND AND performance_end_time + INTERVAL 299 SECOND )
         );
 
     IF conflict_count > 0 THEN
@@ -1199,3 +1151,14 @@ ADD CONSTRAINT fk_group_members_group
 FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
 ON DELETE CASCADE;
 
+-- == EVENTS == --
+--  Delete the matched resale entry from the resale_queue after some time
+CREATE EVENT delete_matched_resale_entries
+ON SCHEDULE EVERY 1 HOUR
+DO
+  DELETE FROM resale_queue
+  WHERE ticket_ID IN (SELECT ticket_ID FROM temp_resale_matches)
+    AND (
+      (buyer_ID IS NOT NULL AND seller_ID IS NULL) OR
+      (buyer_ID IS NULL AND seller_ID IS NOT NULL)
+    );
