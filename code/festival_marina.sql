@@ -146,6 +146,8 @@ CREATE TABLE performances (
     group_ID INT DEFAULT NULL,
     FOREIGN KEY (event_ID) REFERENCES events(event_ID),
     FOREIGN KEY (building_ID) REFERENCES building(building_ID),
+    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID),
+    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID),
     CHECK (performance_start_time < performance_end_time),
     CHECK (performance_duration <= 180) -- max duration of a performance is 3 hours
 );
