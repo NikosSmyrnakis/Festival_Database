@@ -545,27 +545,40 @@ DELIMITER ;
 -- Resale Trigger 3 -- 
 -- When a new resale entry of a buyer is created, add the buyer to the buyer table 
 -- When a new resale entry of a seller is created, add the seller to the seller table
-
 DELIMITER $$
 
 CREATE TRIGGER create_buyer_or_seller_after_visitor
 AFTER INSERT ON resale_queue
 FOR EACH ROW
 BEGIN
+    -- Declare variable to check if the seller already exists
+    DECLARE existing_seller INT;
+
     -- If buyer_ID is not NULL and seller_ID is NULL, then insert the buyer_ID into the buyer table
     IF NEW.buyer_ID IS NOT NULL AND NEW.seller_ID IS NULL THEN
         INSERT INTO buyer (visitor_ID)
         VALUES (NEW.buyer_ID);  -- Use NEW.buyer_ID as visitor_ID
     END IF;
 
-    -- If seller_ID is not NULL and buyer_ID is NULL, then insert the seller_ID into the seller table
+    -- If seller_ID is not NULL and buyer_ID is NULL, then check if the seller_ID already exists
     IF NEW.seller_ID IS NOT NULL AND NEW.buyer_ID IS NULL THEN
-        INSERT INTO seller (visitor_ID)
-        VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as visitor_ID
+        -- Check if the seller_ID already exists in the seller table
+        SELECT COUNT(*)
+        INTO existing_seller
+        FROM seller
+        WHERE visitor_ID = NEW.seller_ID;
+
+        -- If the seller doesn't exist, insert it into the seller table
+        IF existing_seller = 0 THEN
+            INSERT INTO seller (visitor_ID)
+            VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as visitor_ID
+        END IF;
     END IF;
 END$$
 
 DELIMITER ;
+
+
 
 -- Resale Trigger 4 --
 -- Check if the ticket is sold out before allowing resale
