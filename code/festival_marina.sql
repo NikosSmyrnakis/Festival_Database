@@ -198,16 +198,16 @@ CREATE TABLE ticket (
 -- Buyer
 -- Represents users interested in buying tickets
 CREATE TABLE buyer (
-    buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT 
+    buyer_ID INT PRIMARY KEY,
+    FOREIGN KEY (buyer_ID) REFERENCES visitor(visitor_ID)
 );
 
 
 -- Seller
 -- Represents users who are selling or listing tickets for resale
 CREATE TABLE seller (
-    seller_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT 
+    seller_ID INT PRIMARY KEY ,
+    FOREIGN KEY (seller_ID) REFERENCES visitor(visitor_ID)
 );
 
 -- Resale Queue (FIFO)
@@ -551,32 +551,43 @@ CREATE TRIGGER create_buyer_or_seller_after_visitor
 AFTER INSERT ON resale_queue
 FOR EACH ROW
 BEGIN
-    -- Declare variable to check if the seller already exists
+    -- Declare variables to check if the buyer or seller already exists
+    DECLARE existing_buyer INT;
     DECLARE existing_seller INT;
 
-    -- If buyer_ID is not NULL and seller_ID is NULL, then insert the buyer_ID into the buyer table
-    IF NEW.buyer_ID IS NOT NULL AND NEW.seller_ID IS NULL THEN
-        INSERT INTO buyer (visitor_ID)
-        VALUES (NEW.buyer_ID);  -- Use NEW.buyer_ID as visitor_ID
+    -- If buyer_ID is not NULL and it does not exist in the buyer table, insert it into the buyer table
+    IF NEW.buyer_ID IS NOT NULL THEN
+        -- Check if the buyer_ID already exists in the buyer table
+        SELECT COUNT(*)
+        INTO existing_buyer
+        FROM buyer
+        WHERE buyer_ID = NEW.buyer_ID;
+
+        -- If the buyer doesn't exist, insert it into the buyer table
+        IF existing_buyer = 0 THEN
+            INSERT INTO buyer (buyer_ID)
+            VALUES (NEW.buyer_ID);  -- Use NEW.buyer_ID as buyer_ID
+        END IF;
     END IF;
 
-    -- If seller_ID is not NULL and buyer_ID is NULL, then check if the seller_ID already exists
-    IF NEW.seller_ID IS NOT NULL AND NEW.buyer_ID IS NULL THEN
+    -- If seller_ID is not NULL and it does not exist in the seller table, insert it into the seller table
+    IF NEW.seller_ID IS NOT NULL THEN
         -- Check if the seller_ID already exists in the seller table
         SELECT COUNT(*)
         INTO existing_seller
         FROM seller
-        WHERE visitor_ID = NEW.seller_ID;
+        WHERE seller_ID = NEW.seller_ID;
 
         -- If the seller doesn't exist, insert it into the seller table
         IF existing_seller = 0 THEN
-            INSERT INTO seller (visitor_ID)
-            VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as visitor_ID
+            INSERT INTO seller (seller_ID)
+            VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as seller_ID
         END IF;
     END IF;
 END$$
 
 DELIMITER ;
+
 
 
 
