@@ -199,7 +199,7 @@ CREATE TABLE ticket (
 -- Represents users interested in buying tickets
 CREATE TABLE buyer (
     buyer_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT DEFAULT NULL,
+    visitor_ID INT 
 );
 
 
@@ -207,7 +207,7 @@ CREATE TABLE buyer (
 -- Represents users who are selling or listing tickets for resale
 CREATE TABLE seller (
     seller_ID INT PRIMARY KEY AUTO_INCREMENT,
-    visitor_ID INT DEFAULT NULL,
+    visitor_ID INT 
 );
 
 -- Resale Queue (FIFO)
@@ -220,8 +220,8 @@ CREATE TABLE resale_queue (
     ticket_type ENUM('general_admission', 'VIP', 'backstage') NULL,
     ticket_ID INT NULL,
     listed_at TIMESTAMP ,
-    FOREIGN KEY (buyer_ID) REFERENCES buyer(visitor_ID),
-    FOREIGN KEY (seller_ID) REFERENCES seller(visitor_ID),
+    FOREIGN KEY (buyer_ID) REFERENCES visitor(visitor_ID),
+    FOREIGN KEY (seller_ID) REFERENCES visitor(visitor_ID),
     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
 );
 
@@ -549,19 +549,19 @@ DELIMITER ;
 DELIMITER $$
 
 CREATE TRIGGER create_buyer_or_seller_after_visitor
-AFTER UPDATE ON resale_queue
+AFTER INSERT ON resale_queue
 FOR EACH ROW
 BEGIN
-    -- Αν το buyer_ID δεν είναι NULL και το seller_ID είναι NULL, τότε αντιγράφουμε το buyer_ID στο buyer table
+    -- If buyer_ID is not NULL and seller_ID is NULL, then insert the buyer_ID into the buyer table
     IF NEW.buyer_ID IS NOT NULL AND NEW.seller_ID IS NULL THEN
         INSERT INTO buyer (visitor_ID)
-        VALUES (NEW.buyer_ID); -- Χρησιμοποιούμε το NEW.buyer_ID ως visitor_ID
+        VALUES (NEW.buyer_ID);  -- Use NEW.buyer_ID as visitor_ID
     END IF;
 
-    -- Αν το seller_ID δεν είναι NULL και το buyer_ID είναι NULL, τότε αντιγράφουμε το seller_ID στο seller table
+    -- If seller_ID is not NULL and buyer_ID is NULL, then insert the seller_ID into the seller table
     IF NEW.seller_ID IS NOT NULL AND NEW.buyer_ID IS NULL THEN
         INSERT INTO seller (visitor_ID)
-        VALUES (NEW.seller_ID); -- Χρησιμοποιούμε το NEW.seller_ID ως visitor_ID
+        VALUES (NEW.seller_ID);  -- Use NEW.seller_ID as visitor_ID
     END IF;
 END$$
 
