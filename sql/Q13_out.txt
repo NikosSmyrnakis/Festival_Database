@@ -1,2 +1,5 @@
 artist_ID	artist_name	continent_count
-11	David Santos	3
+7	Michael Calhoun	3
+20	Charles Johnson	3
+22	Miss Kimberly Williams	3
+42	Andrew Hartman	3

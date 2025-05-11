@@ -16,7 +16,7 @@ WHERE
         FROM
             artist
         WHERE
-            artist_name = 'Ashley Harris'
+            artist_name = 'Albert Carr'
     )
     AND r.artist_performance IS NOT NULL
     AND r.overall_impression IS NOT NULL

@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-28	Steven Obrien	13	Amy Newman	22
-128	Chad Haley	42	Debra Curry	21
-40	Charles Clark	2	Ian Acosta	21
-113	John Carrillo	28	Renee Mitchell	20
-135	Courtney Mosley	11	David Santos	20
+52	Michael Snyder	45	Glenda Ramirez	22
+96	William Adkins	49	Kenneth Johnson	21
+52	Michael Snyder	35	David Wang	21
+49	Danny Kelly	39	William Marsh	21
+147	Isaiah Willis	25	Scott Harris	20

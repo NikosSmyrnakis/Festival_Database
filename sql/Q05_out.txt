@@ -1,6 +1,6 @@
 artist_ID	artist_name	age	festival_participations
-43	Michael Berger	25	3
-1	Paula Ward	20	3
-30	Valerie Barnes	29	2
-36	Ashley Harris	26	2
-14	Mr. William Jones MD	28	2
+10	Sylvia Vasquez	24	2
+11	Dean Davis	22	2
+15	Tanya Jensen	27	2
+33	Ricardo Murphy	20	2
+39	William Marsh	27	2

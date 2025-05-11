@@ -1,4 +1,4 @@
--- With the indexes
+-- With the indexes we saw it used Block Nested Loop Join
 EXPLAIN FORMAT = JSON
 SELECT
     a.artist_name,
@@ -18,7 +18,7 @@ WHERE
         FROM
             artist FORCE INDEX (idx_artist_name)
         WHERE
-            artist_name = 'Shari Cox'
+            artist_name = 'Albert Carr'
     )
     AND r.artist_performance IS NOT NULL
     AND r.overall_impression IS NOT NULL
@@ -48,8 +48,7 @@ WHERE
         FROM
             artist IGNORE INDEX (idx_artist_name)
         WHERE
-            artist_name = 'Ashley Harris'
+            artist_name = 'Albert Carr'
     )
 GROUP BY
     a.artist_name;
--- Amy Newman
