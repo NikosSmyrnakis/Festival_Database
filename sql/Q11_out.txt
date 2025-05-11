@@ -1,37 +1,18 @@
-artist_ID	artist_name	participation_count
-29	Jared Rangel	2
-49	Kenneth Johnson	2
-4	Christopher Kemp	2
-5	Kathryn Hughes	2
-9	Robert Kelley	2
-32	Ashley Ross	2
-10	Sylvia Vasquez	2
-33	Ricardo Murphy	2
-11	Dean Davis	2
-35	David Wang	2
-14	Daniel Howell	2
-15	Tanya Jensen	2
-18	Kelly Anderson	2
-38	Cynthia Lane	2
-39	William Marsh	2
-25	Scott Harris	2
-44	Sandra Wilson	2
-26	Jennifer Holt	2
-1	Cynthia Fox	2
-2	Bradley Moore	1
-28	Lauren Shelton	1
-47	Jennifer Mitchell	1
-3	Albert Carr	1
-30	Adriana Mosley	1
-50	Leslie Dixon	1
-31	Evan Jones	1
-34	Meredith Arnold	1
-13	Jean Chan	1
-36	Michael Stephens	1
-37	Danielle Tate	1
-19	Crystal Pierce	1
-24	Victoria Sanchez	1
-43	Bryan Brown	1
-45	Glenda Ramirez	1
-27	Connie Davis	1
-46	Rebecca Williams	1
+entity_type	entity_ID	entity_name	participation_count
+group	15	Tyler Williams Band	7
+group	4	Sarah Thornton Band	7
+group	5	Justin Nicholson Band	7
+group	8	David Vasquez Band	7
+group	9	Sierra Meza Band	7
+group	10	Jennifer Clarke Band	7
+group	6	Holly Miller Band	6
+group	7	Shane Rosales Band	6
+group	12	Richard Rogers Band	5
+group	14	Kelly Rodriguez Band	5
+group	1	Morgan Russell Band	5
+group	2	Julie Dodson Band	5
+artist	42	Andrew Hartman	3
+artist	48	Julian Stone	3
+artist	7	Michael Calhoun	3
+artist	20	Charles Johnson	3
+artist	22	Miss Kimberly Williams	3

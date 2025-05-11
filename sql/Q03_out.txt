@@ -1,2 +1,3 @@
-artist_ID	artist_name	festival_ID	warm_up_count
-14	Daniel Howell	5	3
+artist_ID	group_ID	artist_name	group_name	festival_ID	warm_up_count
+NULL	6	NULL	Holly Miller Band	6	3
+14	NULL	Daniel Howell	NULL	5	3

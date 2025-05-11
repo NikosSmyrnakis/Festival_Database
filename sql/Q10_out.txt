@@ -1,4 +1,4 @@
-genre1	genre2	appearances
-Jazz	Rock	7
-Electronic	Jazz	6
-Jazz	Pop	6
+entity_type	genre1	genre2	appearances
+group	Classical	Electronic	10
+group	Classical	Pop	10
+group	Pop	Rock	10

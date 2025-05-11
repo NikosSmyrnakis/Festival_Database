@@ -1,21 +1,27 @@
-artist_ID	artist_name	genre_name	has_participated
-3	Albert Carr	Rock	no
-42	Andrew Hartman	Rock	no
-2	Bradley Moore	Rock	no
-43	Bryan Brown	Rock	no
-20	Charles Johnson	Rock	no
-4	Christopher Kemp	Rock	no
-1	Cynthia Fox	Rock	no
-40	Jaime Potter	Rock	no
-26	Jennifer Holt	Rock	no
-23	Julia Lane	Rock	no
-48	Julian Stone	Rock	no
-5	Kathryn Hughes	Rock	no
-49	Kenneth Johnson	Rock	no
-28	Lauren Shelton	Rock	no
-50	Leslie Dixon	Rock	no
-7	Michael Calhoun	Rock	no
-36	Michael Stephens	Rock	no
-22	Miss Kimberly Williams	Rock	no
-44	Sandra Wilson	Rock	no
-15	Tanya Jensen	Rock	no
+entity_type	entity_ID	entity_name	genre_name	has_participated
+artist	1	Cynthia Fox	Rock	no
+artist	2	Bradley Moore	Rock	no
+artist	3	Albert Carr	Rock	no
+artist	4	Christopher Kemp	Rock	no
+artist	5	Kathryn Hughes	Rock	no
+artist	7	Michael Calhoun	Rock	no
+artist	15	Tanya Jensen	Rock	no
+artist	20	Charles Johnson	Rock	no
+artist	22	Miss Kimberly Williams	Rock	no
+artist	23	Julia Lane	Rock	no
+artist	26	Jennifer Holt	Rock	no
+artist	28	Lauren Shelton	Rock	no
+artist	36	Michael Stephens	Rock	no
+artist	40	Jaime Potter	Rock	no
+artist	42	Andrew Hartman	Rock	no
+artist	43	Bryan Brown	Rock	no
+artist	44	Sandra Wilson	Rock	no
+artist	48	Julian Stone	Rock	no
+artist	49	Kenneth Johnson	Rock	no
+artist	50	Leslie Dixon	Rock	no
+group	2	Julie Dodson Band	Rock	no
+group	5	Justin Nicholson Band	Rock	yes
+group	7	Shane Rosales Band	Rock	yes
+group	9	Sierra Meza Band	Rock	yes
+group	12	Richard Rogers Band	Rock	yes
+group	15	Tyler Williams Band	Rock	no

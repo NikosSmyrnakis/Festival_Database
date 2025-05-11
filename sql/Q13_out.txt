@@ -1,5 +1,20 @@
-artist_ID	artist_name	continent_count
-7	Michael Calhoun	3
-20	Charles Johnson	3
-22	Miss Kimberly Williams	3
-42	Andrew Hartman	3
+entity_type	entity_ID	entity_name	continent_count
+artist	7	Michael Calhoun	3
+artist	20	Charles Johnson	3
+artist	22	Miss Kimberly Williams	3
+artist	42	Andrew Hartman	3
+group	1	Morgan Russell Band	3
+group	2	Julie Dodson Band	3
+group	3	Carlos Brown Band	3
+group	4	Sarah Thornton Band	3
+group	5	Justin Nicholson Band	3
+group	6	Holly Miller Band	3
+group	7	Shane Rosales Band	3
+group	8	David Vasquez Band	3
+group	9	Sierra Meza Band	3
+group	10	Jennifer Clarke Band	3
+group	11	Jessica Hart Band	3
+group	12	Richard Rogers Band	3
+group	13	Jennifer Barr Band	3
+group	14	Kelly Rodriguez Band	3
+group	15	Tyler Williams Band	3
