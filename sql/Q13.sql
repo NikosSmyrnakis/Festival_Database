@@ -27,3 +27,4 @@ WHERE
     num_of_continents >= 3
 ORDER BY
     num_of_continents DESC;
+    
