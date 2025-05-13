@@ -1,3 +1,2 @@
 visitor_name	event_name	avg_overall_impression
-Jason Perez	Box Concert	4.00
-Jason Perez	Put Concert	4.00
+Lindsey David	Company Concert	4.00

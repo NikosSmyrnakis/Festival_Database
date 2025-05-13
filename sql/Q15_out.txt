@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-52	Michael Snyder	45	Glenda Ramirez	22
-96	William Adkins	49	Kenneth Johnson	21
-52	Michael Snyder	35	David Wang	21
-49	Danny Kelly	39	William Marsh	21
-147	Isaiah Willis	25	Scott Harris	20
+21	Jeremy Rich	34	Lisa Crawford	23
+50	Veronica Brown	41	Donna Hill	23
+77	Michael Krause	4	Lindsey Washington	22
+130	Holly Griffin	24	Raymond Valdez	21
+88	Toni King	39	Patrick Lin	20

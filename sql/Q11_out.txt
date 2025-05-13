@@ -1,18 +1,20 @@
 entity_type	entity_ID	entity_name	participation_count
-group	15	Tyler Williams Band	7
-group	4	Sarah Thornton Band	7
-group	5	Justin Nicholson Band	7
-group	8	David Vasquez Band	7
-group	9	Sierra Meza Band	7
-group	10	Jennifer Clarke Band	7
-group	6	Holly Miller Band	6
-group	7	Shane Rosales Band	6
-group	12	Richard Rogers Band	5
-group	14	Kelly Rodriguez Band	5
-group	1	Morgan Russell Band	5
-group	2	Julie Dodson Band	5
-artist	42	Andrew Hartman	3
-artist	48	Julian Stone	3
-artist	7	Michael Calhoun	3
-artist	20	Charles Johnson	3
-artist	22	Miss Kimberly Williams	3
+group	9	Amy Smith Band	7
+group	10	Debra Phelps Band	7
+group	15	Evan Andrews Band	7
+group	1	Timothy Cooper Band	7
+group	4	Dr. Joshua Larsen Band	7
+group	11	Mr. Kenneth Perez Band	6
+group	12	Trevor Burnett Band	6
+group	13	Craig Ryan Band	6
+group	14	Adrian Stevenson Band	6
+group	2	Yolanda Snyder Band	6
+group	5	Marc Stein Band	5
+artist	4	Lindsey Washington	4
+artist	5	Robert Harris	4
+artist	27	Brandy Wilson	4
+artist	44	Ernest Long	4
+artist	10	Joshua Lee	3
+artist	32	Stacey Chavez	3
+artist	33	Linda Brown	3
+artist	40	Shane Clark	3

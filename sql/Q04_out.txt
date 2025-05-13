@@ -1,2 +1,2 @@
 artist_name	avg_artist_performance	avg_overall_impression
-Albert Carr	4.00	3.00
+Ernest Long	3.50	4.00

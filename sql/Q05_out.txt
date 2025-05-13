@@ -1,6 +1,6 @@
 artist_ID	artist_name	age	festival_participations
-5	Kathryn Hughes	26	2
-10	Sylvia Vasquez	24	2
-11	Dean Davis	22	2
-15	Tanya Jensen	27	2
-33	Ricardo Murphy	20	2
+44	Ernest Long	20	4
+32	Stacey Chavez	25	3
+33	Linda Brown	26	3
+40	Shane Clark	26	3
+26	Bryan Greene	25	2

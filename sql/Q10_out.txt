@@ -1,4 +1,4 @@
 entity_type	genre1	genre2	appearances
-group	Classical	Electronic	10
-group	Classical	Pop	10
-group	Pop	Rock	10
+group	Electronic	Rock	10
+group	Classical	Jazz	10
+group	Hip-Hop	Rock	10

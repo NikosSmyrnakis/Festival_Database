@@ -1,27 +1,30 @@
 entity_type	entity_ID	entity_name	genre_name	has_participated
-artist	1	Cynthia Fox	Rock	no
-artist	2	Bradley Moore	Rock	no
-artist	3	Albert Carr	Rock	no
-artist	4	Christopher Kemp	Rock	no
-artist	5	Kathryn Hughes	Rock	no
-artist	7	Michael Calhoun	Rock	no
-artist	15	Tanya Jensen	Rock	no
-artist	20	Charles Johnson	Rock	no
-artist	22	Miss Kimberly Williams	Rock	no
-artist	23	Julia Lane	Rock	no
-artist	26	Jennifer Holt	Rock	no
-artist	28	Lauren Shelton	Rock	no
-artist	36	Michael Stephens	Rock	no
-artist	40	Jaime Potter	Rock	no
-artist	42	Andrew Hartman	Rock	no
-artist	43	Bryan Brown	Rock	no
-artist	44	Sandra Wilson	Rock	no
-artist	48	Julian Stone	Rock	no
-artist	49	Kenneth Johnson	Rock	no
-artist	50	Leslie Dixon	Rock	no
-group	2	Julie Dodson Band	Rock	no
-group	5	Justin Nicholson Band	Rock	yes
-group	7	Shane Rosales Band	Rock	yes
-group	9	Sierra Meza Band	Rock	yes
-group	12	Richard Rogers Band	Rock	yes
-group	15	Tyler Williams Band	Rock	no
+artist	1	Mr. Spencer White	Rock	no
+artist	4	Lindsey Washington	Rock	no
+artist	5	Robert Harris	Rock	yes
+artist	8	Richard Glass	Rock	no
+artist	10	Joshua Lee	Rock	no
+artist	13	Kathy Adams	Rock	yes
+artist	14	Brenda Wu	Rock	no
+artist	17	Mandy Tate	Rock	no
+artist	19	Jonathan Jones	Rock	no
+artist	22	Jessica Morton	Rock	no
+artist	27	Brandy Wilson	Rock	no
+artist	28	Rachel Smith	Rock	no
+artist	34	Lisa Crawford	Rock	no
+artist	35	Leah Meyer	Rock	yes
+artist	36	Richard Curtis	Rock	no
+artist	39	Patrick Lin	Rock	yes
+artist	44	Ernest Long	Rock	no
+artist	46	Martha Lewis	Rock	no
+artist	48	Jenna Mitchell	Rock	no
+group	2	Yolanda Snyder Band	Rock	yes
+group	5	Marc Stein Band	Rock	no
+group	6	Katelyn Hines Band	Rock	no
+group	8	Andrew Mccullough Band	Rock	no
+group	9	Amy Smith Band	Rock	yes
+group	10	Debra Phelps Band	Rock	yes
+group	11	Mr. Kenneth Perez Band	Rock	no
+group	12	Trevor Burnett Band	Rock	no
+group	14	Adrian Stevenson Band	Rock	yes
+group	15	Evan Andrews Band	Rock	yes

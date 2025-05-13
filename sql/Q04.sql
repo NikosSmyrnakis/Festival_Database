@@ -16,7 +16,7 @@ WHERE
         FROM
             artist
         WHERE
-            artist_name = 'Albert Carr'
+            artist_name = 'Ernest Long'
     )
     AND r.artist_performance IS NOT NULL
     AND r.overall_impression IS NOT NULL
