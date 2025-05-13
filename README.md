@@ -29,6 +29,15 @@ In this stage, our project consists of the following files:
    USE db1;
    SOURCE install.sql;
    ```
+5. **`users`**
+   Creating specific users with custom privilages.
+
+   ```bash
+   mysql -u manager -pmanager_pass -D db1
+   mysql -u visitor_portal -pvisitor_pass -D db1
+   mysql -u analytics -panalytics_pass -D db1
+   ```
+
 
 ---
 

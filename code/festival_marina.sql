@@ -278,30 +278,24 @@ CREATE TABLE photo(
 
 -- == INDEXES == --
 
-CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID);
-CREATE INDEX idx_artist_name ON artist(artist_name);
-CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID);
-CREATE INDEX idx_perf_group_event ON performances(group_ID, event_ID);
-CREATE INDEX idx_events_festival ON events(festival_ID);
-CREATE INDEX idx_ticket_visitor_event ON ticket(visitor_ID, event_ID);
-CREATE INDEX idx_ticket_event ON ticket(event_ID);
-CREATE INDEX idx_review_ticket ON review(ticket_ID);
-CREATE INDEX idx_genre_artist ON genre(artist_ID);
-CREATE INDEX idx_genre_group ON genre(group_ID);
-CREATE INDEX idx_role_event_role ON role_of_personel_on_event(event_ID, role);
-CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name);
-CREATE INDEX idx_ticket_purchase_year_price ON ticket(purchase_date, purchase_price);
-CREATE INDEX idx_perf_type_artist_event ON performances(performance_type, artist_ID, event_ID);
-CREATE INDEX idx_role_event_role_personel ON role_of_personel_on_event(role, personel_ID, event_ID);
-CREATE INDEX idx_personel_expertise ON personel(expertise_status);
-CREATE INDEX idx_festival_location_continent ON festival_location(festival_ID, continent);
-
+CREATE INDEX idx_perf_event_artist ON performances(event_ID, artist_ID); -- Q04, Q05, Q09, Q10, Q11, Q13, Q14, Q15 
+CREATE INDEX idx_artist_name ON artist(artist_name); -- Q04 
+CREATE INDEX idx_perf_artist_event ON performances(artist_ID, event_ID); -- Q02, Q04, Q05, Q10,Q11, Q13, Q15 
+CREATE INDEX idx_perf_group_event ON performances(group_ID, event_ID); -- Q02, Q04, Q05, Q10,Q11, Q13, Q15 
+CREATE INDEX idx_ticket_visitor_event ON ticket(visitor_ID, event_ID); -- Q06, Q09, Q15 
+CREATE INDEX idx_role_event_role ON role_of_personel_on_event(event_ID, role); -- Q12 
+CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name); -- Q06 
+CREATE INDEX idx_ticket_purchase_year_price ON ticket(purchase_date, purchase_price); --Q01 
+CREATE INDEX idx_perf_type_artist_event ON performances(performance_type, artist_ID, event_ID); -- Q03 
+CREATE INDEX idx_role_event_role_personel ON role_of_personel_on_event(role, personel_ID, event_ID); -- Q07, Q08 
+CREATE INDEX idx_personel_expertise ON personel(expertise_status); -- Q08 
+CREATE INDEX idx_festival_location_continent ON festival_location(festival_ID, continent); --Q13 
 
 -- == TRIGGERS == --
 
 
-
 -- Deletion Triggers
+-- Deletion Trigger 1
 -- Prevent Festival Deletion Trigger
 DELIMITER $$
 
@@ -315,6 +309,7 @@ END$$
 
 DELIMITER ;
 
+--Deletion Trigger 2
 -- Prevent Performance Deletion Trigger
 DELIMITER $$
 
@@ -477,12 +472,8 @@ END$$
 
 DELIMITER ;
 
+
 -- Resale Trigger 2 --
---  Matching Seller and Buyer and Updating Ticket
-
-
-
--- Resale Trigger 4 --
 -- Check if the ticket is sold out before allowing resale
 DELIMITER $$
 
@@ -591,7 +582,7 @@ END$$
 
 DELIMITER ;
 
--- Resale Trigger 2 --
+-- Resale Trigger 4 --
 --  Matching Seller and Buyer and Updating Ticket
 
 DELIMITER $$
@@ -1145,34 +1136,51 @@ ADD CONSTRAINT chk_one_side_only CHECK (
 
 
 
--- -- == CASCADES == --
--- ALTER TABLE role_of_personel_on_event
---   DROP FOREIGN KEY fk_role_personel,
---   ADD CONSTRAINT fk_role_personel
---     FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID)
---     ON DELETE CASCADE
---     ON UPDATE CASCADE;
+-- == CASCADES == --
 
--- ALTER TABLE review
---   DROP FOREIGN KEY fk_review_ticket,
---   ADD CONSTRAINT fk_review_ticket
---     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
---     ON DELETE CASCADE
---     ON UPDATE CASCADE;
+-- Cascade 1 role of personel on event --
+ALTER TABLE role_of_personel_on_event
+  DROP FOREIGN KEY role_of_personel_on_event_ibfk_1,
+  DROP FOREIGN KEY role_of_personel_on_event_ibfk_2;
+ALTER TABLE role_of_personel_on_event
+  ADD CONSTRAINT fk_role_personel
+    FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  ADD CONSTRAINT fk_role_event
+    FOREIGN KEY (event_ID) REFERENCES events(event_ID)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE;
 
--- ALTER TABLE role_of_personel_on_event
---   DROP FOREIGN KEY fk_role_event,
---   ADD CONSTRAINT fk_role_event
---     FOREIGN KEY (event_ID) REFERENCES events(event_ID)
---     ON DELETE CASCADE
---     ON UPDATE CASCADE;
 
--- ALTER TABLE group_members
---   DROP FOREIGN KEY fk_group_members_group,
---   ADD CONSTRAINT fk_group_members_group
---     FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
---     ON DELETE CASCADE
---     ON UPDATE CASCADE;
+-- Cascade 2 review table --
+ALTER TABLE review
+  DROP FOREIGN KEY review_ibfk_1,
+  DROP FOREIGN KEY review_ibfk_2;
+ALTER TABLE review
+  ADD CONSTRAINT fk_ticket_ID
+    FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  ADD CONSTRAINT fk_performance_ID
+    FOREIGN KEY (performance_ID) REFERENCES performances(performance_ID)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE;    
+
+-- Cascade 3 group_members table --
+ALTER TABLE group_members
+  DROP FOREIGN KEY group_members_ibfk_1,
+  DROP FOREIGN KEY group_members_ibfk_2;
+ALTER TABLE group_members
+  ADD CONSTRAINT fk_artist_ID
+    FOREIGN KEY (artist_ID) REFERENCES artist(artist_ID)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  ADD CONSTRAINT fk_group_ID
+    FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE;
+ 
 
 -- == EVENTS == --
 --  Delete the matched resale entry from the resale_queue after some time
