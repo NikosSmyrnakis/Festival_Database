@@ -426,6 +426,27 @@ END$$
 DELIMITER ;
 
 
+-- Visitor Triggers --
+-- Visitor Trigger 1 --
+-- Ensure visitor's info is updated in the ticket table when visitor info is updated
+DELIMITER $$
+CREATE TRIGGER trg_ticket_update_visitor
+AFTER UPDATE ON visitor
+FOR EACH ROW
+BEGIN
+  UPDATE ticket
+    SET visitor_name       = NEW.first_name,
+        visitor_last_name  = NEW.last_name,
+        visitor_email      = NEW.email,
+        visitor_telephone  = NEW.telephone,
+        visitor_age        = NEW.age
+  WHERE visitor_ID = NEW.visitor_ID;
+END$$
+
+DELIMITER ;
+
+
+
 -- Resale Triggers --
 -- Resale Trigger 1 --
 -- Trigger to check that the ticket is not activated before resale
@@ -1124,29 +1145,34 @@ ADD CONSTRAINT chk_one_side_only CHECK (
 
 
 
--- == CASCADES == --
-ALTER TABLE role_of_personel_on_event
-ADD CONSTRAINT fk_role_personel
-FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID)
-ON DELETE CASCADE;
+-- -- == CASCADES == --
+-- ALTER TABLE role_of_personel_on_event
+--   DROP FOREIGN KEY fk_role_personel,
+--   ADD CONSTRAINT fk_role_personel
+--     FOREIGN KEY (personel_ID) REFERENCES personel(personel_ID)
+--     ON DELETE CASCADE
+--     ON UPDATE CASCADE;
 
+-- ALTER TABLE review
+--   DROP FOREIGN KEY fk_review_ticket,
+--   ADD CONSTRAINT fk_review_ticket
+--     FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
+--     ON DELETE CASCADE
+--     ON UPDATE CASCADE;
 
-ALTER TABLE review
-ADD CONSTRAINT fk_review_ticket
-FOREIGN KEY (ticket_ID) REFERENCES ticket(ticket_ID)
-ON DELETE CASCADE;
+-- ALTER TABLE role_of_personel_on_event
+--   DROP FOREIGN KEY fk_role_event,
+--   ADD CONSTRAINT fk_role_event
+--     FOREIGN KEY (event_ID) REFERENCES events(event_ID)
+--     ON DELETE CASCADE
+--     ON UPDATE CASCADE;
 
-
-ALTER TABLE role_of_personel_on_event
-ADD CONSTRAINT fk_role_event
-FOREIGN KEY (event_ID) REFERENCES events(event_ID)
-ON DELETE CASCADE;
-
-
-ALTER TABLE group_members
-ADD CONSTRAINT fk_group_members_group
-FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
-ON DELETE CASCADE;
+-- ALTER TABLE group_members
+--   DROP FOREIGN KEY fk_group_members_group,
+--   ADD CONSTRAINT fk_group_members_group
+--     FOREIGN KEY (group_ID) REFERENCES `group`(group_ID)
+--     ON DELETE CASCADE
+--     ON UPDATE CASCADE;
 
 -- == EVENTS == --
 --  Delete the matched resale entry from the resale_queue after some time
