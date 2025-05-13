@@ -1,2 +1,2 @@
 festival_ID	avg_expertise_score
-7	0.9999
+10	0.9999

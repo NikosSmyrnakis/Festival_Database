@@ -1,19 +1,33 @@
-entity_type	entity_ID	entity_name	continent_count
-artist	5	Robert Harris	3
-artist	32	Stacey Chavez	3
-artist	40	Shane Clark	3
-artist	44	Ernest Long	3
-group	2	Yolanda Snyder Band	3
-group	3	Adrian Alexander Band	3
-group	4	Dr. Joshua Larsen Band	3
-group	5	Marc Stein Band	3
-group	6	Katelyn Hines Band	3
-group	7	Pamela Martin Band	3
-group	8	Andrew Mccullough Band	3
-group	9	Amy Smith Band	3
-group	10	Debra Phelps Band	3
-group	11	Mr. Kenneth Perez Band	3
-group	12	Trevor Burnett Band	3
-group	13	Craig Ryan Band	3
-group	14	Adrian Stevenson Band	3
-group	15	Evan Andrews Band	3
+artist_ID	artist_name	num_of_continents
+14	Brenda Wu	3
+43	Jason Haney	3
+15	Jacob Mcknight	3
+44	Ernest Long	3
+18	Dominique Ruiz	3
+45	Tyler Jones	3
+20	Jessica White	3
+48	Jenna Mitchell	3
+21	Catherine Oneill	3
+49	Danielle Howard	3
+23	James Sanchez	3
+2	Lauren Brown	3
+3	Melissa Wagner	3
+30	Paula Taylor	3
+5	Robert Harris	3
+31	Wendy Graham	3
+6	Amy Torres	3
+32	Stacey Chavez	3
+7	Mr. Bruce Lee	3
+33	Linda Brown	3
+8	Richard Glass	3
+34	Lisa Crawford	3
+9	Kenneth Yu	3
+35	Leah Meyer	3
+10	Joshua Lee	3
+38	Karen Caldwell	3
+11	Judy Clark	3
+39	Patrick Lin	3
+12	Kenneth George	3
+40	Shane Clark	3
+13	Kathy Adams	3
+41	Donna Hill	3

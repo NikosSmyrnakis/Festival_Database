@@ -1,20 +1,17 @@
-entity_type	entity_ID	entity_name	participation_count
-group	9	Amy Smith Band	7
-group	10	Debra Phelps Band	7
-group	15	Evan Andrews Band	7
-group	1	Timothy Cooper Band	7
-group	4	Dr. Joshua Larsen Band	7
-group	11	Mr. Kenneth Perez Band	6
-group	12	Trevor Burnett Band	6
-group	13	Craig Ryan Band	6
-group	14	Adrian Stevenson Band	6
-group	2	Yolanda Snyder Band	6
-group	5	Marc Stein Band	5
-artist	4	Lindsey Washington	4
-artist	5	Robert Harris	4
-artist	27	Brandy Wilson	4
-artist	44	Ernest Long	4
-artist	10	Joshua Lee	3
-artist	32	Stacey Chavez	3
-artist	33	Linda Brown	3
-artist	40	Shane Clark	3
+artist_ID	artist_name	total_festival_participations
+27	Brandy Wilson	4
+44	Ernest Long	4
+4	Lindsey Washington	4
+5	Robert Harris	4
+32	Stacey Chavez	3
+24	Raymond Valdez	2
+26	Bryan Greene	2
+1	Mr. Spencer White	2
+16	Ian Huff	2
+22	Jessica Morton	1
+29	Robert Johnson	1
+37	Pamela Barnett	1
+46	Martha Lewis	1
+47	Eric Gonzalez	1
+50	Lisa Lopez	1
+19	Jonathan Jones	1

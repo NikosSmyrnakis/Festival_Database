@@ -1,6 +1,6 @@
 visitor_ID	visitor_name	artist_ID	artist_name	total_score
-21	Jeremy Rich	34	Lisa Crawford	23
 50	Veronica Brown	41	Donna Hill	23
+21	Jeremy Rich	34	Lisa Crawford	23
 77	Michael Krause	4	Lindsey Washington	22
 130	Holly Griffin	24	Raymond Valdez	21
 88	Toni King	39	Patrick Lin	20

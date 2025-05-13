@@ -1,2 +1,3 @@
-artist_ID	group_ID	artist_name	group_name	festival_ID	warm_up_count
-8	NULL	Richard Glass	NULL	6	3
+artist_ID	artist_name	festival_ID	warmup_count
+8	Richard Glass	6	4
+3	Melissa Wagner	2	3

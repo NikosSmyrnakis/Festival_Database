@@ -1,6 +1,6 @@
-artist_ID	artist_name	age	festival_participations
-44	Ernest Long	20	4
-32	Stacey Chavez	25	3
-33	Linda Brown	26	3
-40	Shane Clark	26	3
-26	Bryan Greene	25	2
+artist_ID	artist_name	total_festival_participations
+33	Linda Brown	10
+8	Richard Glass	9
+12	Kenneth George	9
+2	Lauren Brown	9
+7	Mr. Bruce Lee	8

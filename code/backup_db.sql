@@ -1572,3 +1572,43 @@ DELIMITER ;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-05-13 19:04:02
+CREATE VIEW artist_participations AS
+SELECT
+    a.artist_ID,
+    a.artist_date_of_birth,
+    a.artist_name,
+    f.festival_ID,
+    e.event_ID,
+    p.performance_ID,
+    p.performance_type,
+    p.performance_start_time,
+    p.performance_end_time,
+    p.performance_duration,
+    'solo' AS participation_type
+FROM
+    artist a
+    JOIN performances p ON a.artist_ID = p.artist_ID
+    JOIN events e ON p.event_ID = e.event_ID
+    JOIN festival f ON e.festival_ID = f.festival_ID
+
+UNION ALL
+
+SELECT
+    gm.artist_ID,
+    a.artist_date_of_birth,
+    a.artist_name,
+    f.festival_ID,
+    e.event_ID,
+    p.performance_ID,
+    p.performance_type,
+    p.performance_start_time,
+    p.performance_end_time,
+    p.performance_duration,
+    'group' AS participation_type
+FROM
+    group_members gm
+    JOIN `group` g ON gm.group_ID = g.group_ID
+    JOIN performances p ON g.group_ID = p.group_ID
+    JOIN events e ON p.event_ID = e.event_ID
+    JOIN festival f ON e.festival_ID = f.festival_ID
+    JOIN artist a ON gm.artist_ID = a.artist_ID;
