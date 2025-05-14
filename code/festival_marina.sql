@@ -326,10 +326,10 @@ CREATE INDEX idx_perf_group_event ON performances(group_ID, event_ID); -- Q02, Q
 CREATE INDEX idx_ticket_visitor_event ON ticket(visitor_ID, event_ID); -- Q06, Q09, Q15 
 CREATE INDEX idx_role_event_role ON role_of_personel_on_event(event_ID, role); -- Q12 
 CREATE INDEX idx_visitor_full_name ON visitor(last_name, first_name); -- Q06 
-CREATE INDEX idx_ticket_purchase_year_price ON ticket(purchase_date, purchase_price); --Q01 
+-- CREATE INDEX idx_ticket_purchase_year_price ON ticket(purchase_date, purchase_price); --Q01 
 CREATE INDEX idx_perf_type_artist_event ON performances(performance_type, artist_ID, event_ID); -- Q03 
-CREATE INDEX idx_role_event_role_personel ON role_of_personel_on_event(role, personel_ID, event_ID); -- Q07, Q08 
-CREATE INDEX idx_personel_expertise ON personel(expertise_status); -- Q08 
+-- CREATE INDEX idx_role_event_role_personel ON role_of_personel_on_event(role, personel_ID, event_ID); -- Q07, Q08 
+-- CREATE INDEX idx_personel_expertise ON personel(expertise_status); -- Q08 
 CREATE INDEX idx_festival_location_continent ON festival_location(festival_ID, continent); --Q13 
 
 -- == TRIGGERS == --

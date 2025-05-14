@@ -37,4 +37,3 @@ ORDER BY
     vpc.performance_count DESC,
     vpc.visitor_ID;
 
--- ok
